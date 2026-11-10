@@ -1,8 +1,13 @@
+import { motion } from 'framer-motion'
+import {
+  ArrowLeft, ArrowRight, Camera, CheckCircle2, ClipboardCheck, FileDown, FileText, Gauge, Info, PenLine, ScanLine, Search,
+  ShieldCheck, Truck, UserRound, UserRoundCog,
+} from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { PhotoPicker, type PhotoItem } from '../components/PhotoPicker'
 import { QrScanner } from '../components/QrScanner'
-import { Alert, Badge, Button, Card, ErrorBox, Field, Spinner } from '../components/ui'
+import { Alert, Badge, Button, Card, ErrorBox, Field, IconChip, Spinner } from '../components/ui'
 import { WarningList } from '../components/WarningList'
 import { useAuth } from '../context/AuthContext'
 import { api, ApiError, download, type Paginated, type Warning } from '../lib/api'
@@ -157,23 +162,33 @@ export default function RefuelPage() {
   if (step === 'termine' && done) {
     return (
       <div className="mx-auto max-w-lg space-y-4">
-        <div className="card p-6 text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-3xl">✓</div>
-          <h1 className="mt-3 text-xl font-bold">Ravitaillement enregistré</h1>
-          {replayed && <p className="mt-1 text-sm text-ink-500">Ce bon avait déjà été reçu : aucun doublon n'a été créé.</p>}
-          <p className="mt-4 text-sm text-ink-500">Numéro du bon</p>
-          <p className="text-2xl font-bold tracking-wide tabular-nums">{done.voucher_number}</p>
-          <dl className="mt-4 grid grid-cols-2 gap-2 text-left text-sm">
-            <dt className="text-ink-500">Véhicule</dt><dd className="font-medium">{done.vehicle_code}</dd>
-            <dt className="text-ink-500">Quantité</dt><dd className="font-semibold">{litres(done.quantity_l)}</dd>
-            <dt className="text-ink-500">Conducteur</dt><dd>{done.driver_name ?? 'Non affecté'}</dd>
-            <dt className="text-ink-500">Date</dt><dd>{dateTime(done.refueled_at)}</dd>
-          </dl>
-        </div>
-        <Button variant="brand" size="xl" className="w-full" onClick={reset}>⛽ Scanner le véhicule suivant</Button>
+        <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className="card overflow-hidden text-center">
+          <div className="relative bg-gradient-to-br from-emerald-500 to-emerald-600 px-6 pb-8 pt-10 text-white">
+            <div className="pointer-events-none absolute inset-0 bg-grid" />
+            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 12, stiffness: 200, delay: 0.1 }}
+              className="relative mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white/15 ring-8 ring-white/10">
+              <svg viewBox="0 0 52 52" className="h-11 w-11" fill="none" stroke="currentColor" strokeWidth={5} strokeLinecap="round" strokeLinejoin="round">
+                <motion.path d="M14 27 l8 8 l16 -18" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: 0.35, duration: 0.45 }} />
+              </svg>
+            </motion.div>
+            <h1 className="relative mt-4 text-xl font-bold">Ravitaillement enregistré</h1>
+            <p className="relative mt-1 text-sm text-emerald-50">Stock de la citerne mis à jour</p>
+          </div>
+          <div className="space-y-2 p-6">
+            {replayed && <Alert tone="info">Ce bon avait déjà été reçu : aucun doublon n'a été créé.</Alert>}
+            <p className="text-xs font-semibold uppercase tracking-wider text-ink-500">Numéro du bon</p>
+            <p className="text-2xl font-bold tracking-wide tabular-nums">{done.voucher_number}</p>
+            <dl className="grid grid-cols-2 gap-3 pt-3 text-left text-sm">
+              {[['Véhicule', done.vehicle_code], ['Quantité', litres(done.quantity_l)], ['Conducteur', done.driver_name ?? 'Non affecté'], ['Date', dateTime(done.refueled_at)]].map(([k, v]) => (
+                <div key={k} className="rounded-xl bg-ink-50 px-3 py-2.5"><dt className="text-xs text-ink-500">{k}</dt><dd className="mt-0.5 font-semibold text-ink-900">{v}</dd></div>
+              ))}
+            </dl>
+          </div>
+        </motion.div>
+        <Button variant="brand" size="xl" className="w-full" icon={ScanLine} onClick={reset}>Scanner le véhicule suivant</Button>
         <div className="grid grid-cols-2 gap-2">
-          <Button variant="secondary" onClick={() => download(`/refuels/${done.id}/voucher`)}>Bon PDF</Button>
-          <Link to={`/bons/${done.id}`} className="inline-flex items-center justify-center rounded-lg border border-ink-200 bg-white px-4 py-2.5 text-sm font-semibold">Voir le détail</Link>
+          <Button variant="secondary" icon={FileDown} onClick={() => download(`/refuels/${done.id}/voucher`)}>Bon PDF</Button>
+          <Link to={`/bons/${done.id}`} className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-white text-sm font-semibold text-ink-800 shadow-sm ring-1 ring-inset ring-ink-200 hover:bg-ink-50"><FileText size={17} />Voir le détail</Link>
         </div>
       </div>
     )
@@ -182,17 +197,18 @@ export default function RefuelPage() {
   // ───────────────────────────────────────────── écran : scan
   if (step === 'scan' || !scan) {
     return (
-      <div className="mx-auto max-w-lg space-y-4">
-        <div>
-          <h1 className="text-xl font-bold">Nouveau ravitaillement</h1>
-          <p className="text-sm text-ink-500">Citerne {user.tanks.find((t) => t.id === tankId)?.code}</p>
+      <div className="mx-auto max-w-lg space-y-5">
+        <Steps step={0} />
+        <div className="text-center">
+          <h1 className="text-2xl font-bold tracking-tight">Scanner un véhicule</h1>
+          <p className="mt-1 text-sm text-ink-500">Citerne <b className="text-ink-800">{user.tanks.find((t) => t.id === tankId)?.code}</b> · visez le QR code collé sur le camion ou l'engin</p>
         </div>
-        {scanning ? <div className="card flex flex-col items-center gap-3 p-10 text-ink-500"><Spinner className="h-8 w-8" />Recherche du véhicule…</div>
+        {scanning ? <div className="card flex flex-col items-center gap-3 p-12 text-ink-500"><Spinner className="h-8 w-8 text-brand-600" />Identification du véhicule…</div>
           : manual ? <ManualSearch onPick={(v) => identify({ vehicle_id: v.id })} onCancel={() => setManual(false)} />
-          : <Card><QrScanner onResult={(text) => identify({ qr: text })} /></Card>}
+          : <QrScanner onResult={(text) => identify({ qr: text })} />}
         <ErrorBox error={scanError} />
         {!manual && !scanning && (
-          <Button variant="secondary" size="lg" className="w-full" onClick={() => setManual(true)}>🔎 Recherche manuelle par code de parc</Button>
+          <Button variant="secondary" size="lg" className="w-full" icon={Search} onClick={() => setManual(true)}>Recherche manuelle par code de parc</Button>
         )}
       </div>
     )
@@ -212,16 +228,17 @@ export default function RefuelPage() {
         </Alert>
       )}
 
+      <Steps step={step === 'recap' ? 2 : 1} />
       <VehicleHeader scan={scan} onChange={reset} />
 
       {step === 'saisie' && (
         <>
-          <Card title="Conducteur">
+          <Card title="Conducteur" subtitle={scan.shift ? `Shift ${scan.shift.name} · ${scan.shift.start_time.slice(0, 5)} → ${scan.shift.end_time.slice(0, 5)}` : undefined} icon={UserRound}>
             <DriverChoice scan={scan} value={form.driver_id} reason={form.driver_reason}
               onChange={(id, reason) => setForm((f) => ({ ...f, driver_id: id, driver_reason: reason }))} />
           </Card>
 
-          <Card title="Séries du compteur de distribution">
+          <Card title="Séries du compteur de distribution" subtitle="Index avant et après remplissage" icon={Gauge}>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Série départ" hint={`Dernière série fin : ${Number(scan.dispenser.expected_index_start).toLocaleString('fr-FR')}`}
                 error={parseNum(form.index_start).ok ? null : (parseNum(form.index_start) as { error: string }).error}>
@@ -231,9 +248,11 @@ export default function RefuelPage() {
                 <input className="input input-lg" inputMode="decimal" autoComplete="off" value={form.index_end} onChange={set('index_end')} placeholder="66 4735" autoFocus />
               </Field>
             </div>
-            <div className={`mt-3 flex items-center justify-between rounded-lg px-4 py-3 ${qty.error ? 'bg-red-50 text-red-800' : 'bg-ink-900 text-white'}`}>
-              <span className="text-sm">Quantité calculée</span>
-              <span className="text-2xl font-bold tabular-nums">{qty.error ? qty.error : qty.value ? litres(qty.value) : '— L'}</span>
+            <div className={`relative mt-4 flex items-center justify-between overflow-hidden rounded-2xl px-5 py-4 ${qty.error ? 'bg-rose-50 text-rose-800 ring-1 ring-rose-200' : 'bg-navy-900 text-white'}`}>
+              {!qty.error && <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-fuel-500/30 blur-2xl" />}
+              <span className="relative text-sm font-medium opacity-80">Quantité calculée</span>
+              <motion.span key={qty.value ?? qty.error ?? 'vide'} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+                className={`relative font-bold tabular-nums ${qty.error ? 'text-base' : 'text-3xl text-fuel-300'}`}>{qty.error ? qty.error : qty.value ? litres(qty.value) : '— L'}</motion.span>
             </div>
             <Field className="mt-3" label="Quantité annoncée (facultatif)" hint="Comparée à la quantité calculée"
               error={declaredParsed.ok ? null : (declaredParsed as { error: string }).error}>
@@ -241,7 +260,7 @@ export default function RefuelPage() {
             </Field>
           </Card>
 
-          <Card title={`Compteur du véhicule (${v.counter_unit === 'h' ? 'heures moteur' : 'kilométrage'})`}>
+          <Card title="Compteur du véhicule" subtitle={v.counter_unit === 'h' ? 'Heures moteur' : 'Kilométrage'} icon={Truck}>
             <Field label={v.counter_unit === 'h' ? 'Heures (H)' : 'Kilomètres'}
               hint={scan.previous_counter_value ? `Dernier relevé : ${counter(scan.previous_counter_value, v.counter_unit)}` : 'Aucun relevé précédent'}
               error={counterParsed.ok ? null : (counterParsed as { error: string }).error}>
@@ -249,23 +268,23 @@ export default function RefuelPage() {
             </Field>
           </Card>
 
-          <Card title="Bon papier et remarque">
+          <Card title="Bon papier et remarque" icon={PenLine}>
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="N° du bon papier (facultatif)"><input className="input" inputMode="numeric" value={form.paper_voucher_number} onChange={set('paper_voucher_number')} placeholder="0075952" /></Field>
               <Field label="Remarque (facultatif)"><input className="input" value={form.remark} onChange={set('remark')} maxLength={500} /></Field>
             </div>
           </Card>
 
-          <Card title="Photos / justificatifs">
+          <Card title="Photos / justificatifs" subtitle="Bon papier, compteur, pièces" icon={Camera}>
             <PhotoPicker items={photos} onChange={setPhotos} />
           </Card>
 
-          <Card title={<span className="flex items-center gap-2">Contrôles {previewing && <Spinner className="h-4 w-4 text-ink-400" />}</span>}>
-            {warnings.length ? <WarningList warnings={warnings} /> : <p className="text-sm text-emerald-700">Aucune anomalie détectée.</p>}
+          <Card title={<span className="flex items-center gap-2">Contrôles automatiques {previewing && <Spinner className="h-4 w-4 text-ink-400" />}</span>} icon={ShieldCheck}>
+            {warnings.length ? <WarningList warnings={warnings} /> : <p className="flex items-center gap-2 text-sm font-medium text-emerald-700"><CheckCircle2 size={18} />Aucune anomalie détectée.</p>}
           </Card>
 
           <div className="sticky bottom-16 z-10 lg:bottom-4">
-            <Button variant="brand" size="xl" className="w-full shadow-lg" disabled={!formReady || uploading || blocking.length > 0} onClick={() => setStep('recap')}>
+            <Button variant="brand" size="xl" className="w-full" iconRight={ArrowRight} disabled={!formReady || uploading || blocking.length > 0} onClick={() => setStep('recap')}>
               {uploading ? 'Envoi des photos…' : 'Continuer vers le récapitulatif'}
             </Button>
           </div>
@@ -274,8 +293,13 @@ export default function RefuelPage() {
 
       {step === 'recap' && (
         <>
-          <Card title="Récapitulatif">
-            <dl className="grid grid-cols-[auto,1fr] gap-x-4 gap-y-2 text-sm">
+          <Card title="Récapitulatif" subtitle="Vérifier avant validation" icon={ClipboardCheck}>
+            <div className="relative mb-5 flex items-center justify-between overflow-hidden rounded-2xl bg-navy-900 px-5 py-4 text-white">
+              <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-fuel-500/30 blur-2xl" />
+              <div className="relative"><p className="text-xs uppercase tracking-wider text-ink-400">Quantité</p><p className="text-3xl font-bold tabular-nums text-fuel-300">{litres(qty.value)}</p></div>
+              <div className="relative text-right"><p className="text-xs uppercase tracking-wider text-ink-400">Véhicule</p><p className="text-xl font-bold">{v.code_parc}</p></div>
+            </div>
+            <dl className="grid grid-cols-[auto,1fr] gap-x-6 gap-y-2.5 text-sm">
               <dt className="text-ink-500">Véhicule</dt><dd className="font-semibold">{v.code_parc} — {v.immatriculation}</dd>
               <dt className="text-ink-500">Conducteur</dt><dd>{driverName ?? <span className="text-amber-700">Non affecté</span>}{scan.shift && ` · shift ${scan.shift.name}`}</dd>
               <dt className="text-ink-500">Site</dt><dd>{v.site?.name ?? '—'}</dd>
@@ -291,7 +315,7 @@ export default function RefuelPage() {
           </Card>
 
           {(alerts.length > 0 || blocking.length > 0) && (
-            <Card title={unconfirmed.length ? `Confirmer ${unconfirmed.length} alerte(s)` : 'Alertes confirmées'}>
+            <Card title={unconfirmed.length ? `Confirmer ${unconfirmed.length} alerte(s)` : 'Alertes confirmées'} icon={ShieldCheck}>
               <WarningList warnings={warnings} confirmed={confirmed} onToggle={toggle} />
             </Card>
           )}
@@ -304,11 +328,11 @@ export default function RefuelPage() {
           {submitError?.requiresConfirmation && <Alert tone="warning">De nouveaux contrôles sont apparus au moment de la validation (autre opération sur la citerne). Les vérifier puis valider.</Alert>}
 
           <div className="sticky bottom-16 z-10 space-y-2 lg:bottom-4">
-            <Button variant="brand" size="xl" className="w-full shadow-lg" loading={submitting}
+            <Button variant="brand" size="xl" className="w-full" icon={CheckCircle2} loading={submitting}
               disabled={submitting || blocking.length > 0 || unconfirmed.length > 0 || uploading} onClick={submit}>
               VALIDER LE RAVITAILLEMENT
             </Button>
-            <Button variant="secondary" className="w-full" disabled={submitting} onClick={() => setStep('saisie')}>Modifier la saisie</Button>
+            <Button variant="secondary" className="w-full" icon={ArrowLeft} disabled={submitting} onClick={() => setStep('saisie')}>Modifier la saisie</Button>
           </div>
         </>
       )}
@@ -322,27 +346,32 @@ const otherDriverName = (id: string) => otherDrivers.get(id)
 function VehicleHeader({ scan, onChange }: { scan: ScanResult; onChange: () => void }) {
   const v: VehicleCard = scan.vehicle
   return (
-    <div className="card overflow-hidden">
-      <div className="flex items-start justify-between gap-3 bg-ink-900 p-4 text-white">
-        <div>
-          <p className="text-3xl font-bold tracking-wide">{v.code_parc}</p>
-          <p className="text-sm text-ink-300">{v.immatriculation} · {v.type_label ?? CATEGORY_LABEL[v.category]}</p>
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="card overflow-hidden">
+      <div className="relative flex items-start justify-between gap-3 overflow-hidden bg-navy-900 p-5 text-white">
+        <div className="pointer-events-none absolute inset-0 bg-grid" />
+        <div className="pointer-events-none absolute -right-12 -top-16 h-40 w-40 rounded-full bg-brand-600/40 blur-3xl" />
+        <div className="relative flex items-center gap-4">
+          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/15"><Truck size={26} /></span>
+          <div>
+            <p className="text-3xl font-bold tracking-wide">{v.code_parc}</p>
+            <p className="text-sm text-ink-300">{v.immatriculation} · {v.type_label ?? CATEGORY_LABEL[v.category]}</p>
+          </div>
         </div>
-        <div className="flex flex-col items-end gap-1">
+        <div className="relative flex flex-col items-end gap-1.5">
           <Badge color={scan.identified_by === 'qr' ? 'green' : 'amber'}>{scan.identified_by === 'qr' ? 'QR scanné' : 'Saisie manuelle'}</Badge>
           {v.status !== 'actif' && <Badge color="red">{STATUS_LABEL[v.status]}</Badge>}
         </div>
       </div>
-      <dl className="grid grid-cols-2 gap-3 p-4 text-sm sm:grid-cols-4">
-        <div><dt className="text-ink-500">Chantier</dt><dd className="font-medium">{v.site?.name ?? '—'}</dd></div>
-        <div><dt className="text-ink-500">Shift</dt><dd className="font-medium">{scan.shift?.name ?? '—'}</dd></div>
-        <div><dt className="text-ink-500">Citerne</dt><dd className="font-medium">{scan.tank.code}</dd></div>
-        <div><dt className="text-ink-500">Stock</dt><dd className="font-medium">{scan.tank.stock_l != null ? litres(scan.tank.stock_l) : '—'}</dd></div>
+      <dl className="grid grid-cols-2 gap-px bg-ink-100 text-sm sm:grid-cols-4">
+        {[['Chantier', v.site?.name ?? '—'], ['Shift', scan.shift?.name ?? '—'], ['Citerne', scan.tank.code], ['Stock citerne', scan.tank.stock_l != null ? litres(scan.tank.stock_l) : '—']].map(([k, val]) => (
+          <div key={k} className="bg-white px-4 py-3"><dt className="text-xs text-ink-500">{k}</dt><dd className="mt-0.5 font-semibold text-ink-900">{val}</dd></div>
+        ))}
       </dl>
-      <div className="border-t border-ink-100 px-4 py-2 text-right">
-        <button className="text-sm font-semibold text-brand-700" onClick={onChange}>Changer de véhicule</button>
+      <div className="flex items-center justify-between border-t border-ink-100 px-4 py-2.5">
+        <span className="flex items-center gap-1.5 text-xs text-ink-500"><Info size={14} />Heure enregistrée par le serveur à la validation</span>
+        <button className="inline-flex items-center gap-1 text-sm font-semibold text-brand-600 hover:text-brand-700" onClick={onChange}><ScanLine size={15} />Changer</button>
       </div>
-    </div>
+    </motion.div>
   )
 }
 
@@ -361,7 +390,7 @@ function DriverChoice({ scan, value, reason, onChange }: { scan: ScanResult; val
   return (
     <div className="space-y-3">
       {scan.assignment_status === 'ok' && scan.driver && !value && (
-        <p className="text-sm">Proposé automatiquement : <span className="text-base font-semibold">{scan.driver.name}</span></p>
+        <p className="flex flex-wrap items-center gap-2 text-sm text-ink-600"><CheckCircle2 size={17} className="text-emerald-600" />Proposé automatiquement : <span className="text-base font-semibold text-ink-900">{scan.driver.name}</span></p>
       )}
       {scan.assignment_status === 'ambigu' && <Alert tone="warning">Plusieurs conducteurs sont affectés : sélectionner celui présent.</Alert>}
       {scan.assignment_status === 'aucune' && <Alert tone="warning">Aucun conducteur affecté à ce véhicule pour ce shift.</Alert>}
@@ -372,9 +401,10 @@ function DriverChoice({ scan, value, reason, onChange }: { scan: ScanResult; val
             const active = value ? String(c.driver_id) === value : scan.driver?.id === c.driver_id && scan.assignment_status === 'ok'
             return (
               <button key={c.assignment_id} type="button" onClick={() => { setOther(false); onChange(String(c.driver_id), '') }}
-                className={`rounded-lg border px-3 py-2 text-left text-sm ${active ? 'border-brand-500 bg-brand-50 ring-2 ring-brand-500/30' : 'border-ink-200 bg-white'}`}>
-                <span className="block font-semibold">{c.driver_name}</span>
-                <span className="text-xs text-ink-500">Équipe {c.team_slot}{c.is_replacement ? ' · remplaçant' : ''}</span>
+                className={`flex items-center gap-3 rounded-xl border px-3.5 py-2.5 text-left text-sm transition ${active ? 'border-brand-500 bg-brand-50 ring-4 ring-brand-500/10' : 'border-ink-200 bg-white hover:border-ink-300'}`}>
+                <span className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold ${active ? 'bg-brand-600 text-white' : 'bg-ink-100 text-ink-600'}`}>{c.driver_name.split(' ').map((x) => x[0]).slice(0, 2).join('')}</span>
+                <span><span className="block font-semibold">{c.driver_name}</span>
+                <span className="text-xs text-ink-500">Équipe {c.team_slot}{c.is_replacement ? ' · remplaçant' : ''}</span></span>
               </button>
             )
           })}
@@ -382,7 +412,7 @@ function DriverChoice({ scan, value, reason, onChange }: { scan: ScanResult; val
       )}
 
       {!other ? (
-        <button type="button" className="text-sm font-semibold text-brand-700" onClick={() => setOther(true)}>Autre conducteur (remplaçant non prévu)…</button>
+        <button type="button" className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 hover:text-brand-700" onClick={() => setOther(true)}><UserRoundCog size={16} />Autre conducteur (remplaçant non prévu)</button>
       ) : (
         <div className="space-y-2 rounded-lg border border-ink-200 p-3">
           <Field label="Rechercher un conducteur"><input className="input" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Nom" /></Field>
@@ -416,16 +446,17 @@ function ManualSearch({ onPick, onCancel }: { onPick: (v: VehicleCard) => void; 
     return () => clearTimeout(t)
   }, [q])
   return (
-    <Card title="Recherche par code de parc" actions={<Button size="sm" variant="ghost" onClick={onCancel}>Revenir au scan</Button>}>
-      <input className="input input-lg uppercase" autoFocus placeholder="D222, E81, immatriculation…" value={q} onChange={(e) => setQ(e.target.value)} />
+    <Card title="Recherche par code de parc" icon={Search} actions={<Button size="sm" variant="ghost" icon={ScanLine} onClick={onCancel}>Revenir au scan</Button>}>
+      <span className="relative block"><Search size={20} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-400" />
+        <input className="input input-lg pl-12 uppercase" autoFocus placeholder="D222, E81, immatriculation…" value={q} onChange={(e) => setQ(e.target.value)} /></span>
       <div className="mt-3">
         {loading && <Spinner className="mx-auto h-5 w-5 text-ink-400" />}
         <ul className="divide-y divide-ink-100">
           {list.map((v) => (
             <li key={v.id}>
-              <button className="flex w-full items-center justify-between gap-3 py-3 text-left" onClick={() => onPick(v)}>
-                <span><span className="text-lg font-bold">{v.code_parc}</span> <span className="text-sm text-ink-500">{v.immatriculation}</span>
-                  <span className="block text-xs text-ink-500">{v.type_label} · {v.site?.name}</span></span>
+              <button className="flex w-full items-center justify-between gap-3 rounded-xl px-2 py-3 text-left transition hover:bg-ink-50" onClick={() => onPick(v)}>
+                <span className="flex items-center gap-3"><IconChip icon={Truck} tone="gray" size="sm" /><span><span className="text-lg font-bold">{v.code_parc}</span> <span className="text-sm text-ink-500">{v.immatriculation}</span>
+                  <span className="block text-xs text-ink-500">{v.type_label} · {v.site?.name}</span></span></span>
                 {v.status !== 'actif' && <Badge color="red">{STATUS_LABEL[v.status]}</Badge>}
               </button>
             </li>
@@ -434,5 +465,27 @@ function ManualSearch({ onPick, onCancel }: { onPick: (v: VehicleCard) => void; 
         {q && !loading && !list.length && <p className="py-4 text-center text-sm text-ink-500">Aucun véhicule trouvé.</p>}
       </div>
     </Card>
+  )
+}
+
+const STEPS = ['Véhicule', 'Saisie', 'Validation']
+
+function Steps({ step }: { step: number }) {
+  return (
+    <ol className="flex items-center gap-2">
+      {STEPS.map((label, i) => (
+        <li key={label} className={`flex items-center gap-2 ${i < STEPS.length - 1 ? 'flex-1' : ''}`}>
+          <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold transition ${i < step ? 'bg-emerald-500 text-white' : i === step ? 'bg-brand-600 text-white shadow-glow' : 'bg-ink-200 text-ink-500'}`}>
+            {i < step ? <CheckCircle2 size={15} /> : i + 1}
+          </span>
+          <span className={`hidden text-sm font-medium sm:inline ${i <= step ? 'text-ink-900' : 'text-ink-400'}`}>{label}</span>
+          {i < STEPS.length - 1 && (
+            <span className="relative h-0.5 flex-1 overflow-hidden rounded bg-ink-200">
+              <motion.span className="absolute inset-y-0 left-0 bg-emerald-500" initial={false} animate={{ width: i < step ? '100%' : '0%' }} transition={{ duration: 0.4 }} />
+            </span>
+          )}
+        </li>
+      ))}
+    </ol>
   )
 }

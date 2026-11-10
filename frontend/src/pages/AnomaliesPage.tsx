@@ -1,7 +1,8 @@
+import { CheckCheck, PenLine, ShieldAlert, ShieldCheck } from 'lucide-react'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Badge, Button, Card, Empty, ErrorBox, Field, Loading, Modal, PageHeader, Pagination } from '../components/ui'
+import { Badge, Button, Card, Empty, ErrorBox, Field, Loading, Modal, PageHeader, Pagination, Tabs } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
 import { api, type Paginated } from '../lib/api'
 import { dateTime, litres } from '../lib/format'
@@ -27,14 +28,8 @@ export default function AnomaliesPage() {
   const [tab, setTab] = useState<'anomalies' | 'corrections'>('anomalies')
   return (
     <>
-      <PageHeader title="Alertes et anomalies" sub="Opérations à contrôler et demandes de correction" />
-      <div className="mb-4 flex gap-2">
-        {(['anomalies', 'corrections'] as const).map((t) => (
-          <button key={t} onClick={() => setTab(t)} className={`rounded-full px-4 py-1.5 text-sm font-semibold ${tab === t ? 'bg-ink-900 text-white' : 'bg-white text-ink-700 ring-1 ring-ink-200'}`}>
-            {t === 'anomalies' ? 'Anomalies' : 'Corrections / annulations'}
-          </button>
-        ))}
-      </div>
+      <PageHeader icon={ShieldAlert} title="Alertes et anomalies" sub="Opérations à contrôler et demandes de correction" />
+      <Tabs value={tab} onChange={setTab} items={[{ value: 'anomalies', label: 'Anomalies', icon: ShieldAlert }, { value: 'corrections', label: 'Corrections / annulations', icon: PenLine }]} />
       {tab === 'anomalies' ? <AnomalyList /> : <CorrectionList canReview={user?.role === 'admin'} />}
     </>
   )
@@ -56,11 +51,11 @@ function AnomalyList() {
       </div>
       <ErrorBox error={q.error} />
       <Card padded={false}>
-        {q.isLoading ? <Loading /> : !q.data?.data.length ? <Empty>Aucune anomalie {status === 'ouverte' ? 'ouverte' : ''}.</Empty> : (
+        {q.isLoading ? <Loading /> : !q.data?.data.length ? <Empty icon={ShieldCheck}>Aucune anomalie {status === 'ouverte' ? 'ouverte' : ''}.</Empty> : (
           <>
             <ul className="divide-y divide-ink-100">
               {q.data.data.map((a) => (
-                <li key={a.id} className="flex flex-wrap items-start justify-between gap-3 px-4 py-3">
+                <li key={a.id} className="flex flex-wrap items-start justify-between gap-3 px-5 py-4 transition hover:bg-ink-50/60">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge color={SEVERITY[a.severity]}>{a.severity}</Badge>
@@ -71,7 +66,7 @@ function AnomalyList() {
                     {a.refuel && <Link to={`/bons/${a.refuel.id}`} className="mt-1 inline-block text-sm font-medium text-brand-700 hover:underline">Bon {a.refuel.voucher_number} — {a.refuel.vehicle_code} — {litres(a.refuel.quantity_l)}</Link>}
                     {a.resolution_note && <p className="mt-1 text-xs text-ink-500">Traitement : {a.resolution_note}</p>}
                   </div>
-                  {a.status === 'ouverte' && <Button size="sm" variant="secondary" onClick={() => setHandle(a)}>Traiter</Button>}
+                  {a.status === 'ouverte' && <Button size="sm" variant="secondary" icon={CheckCheck} onClick={() => setHandle(a)}>Traiter</Button>}
                 </li>
               ))}
             </ul>
@@ -117,7 +112,7 @@ function CorrectionList({ canReview }: { canReview: boolean }) {
       <div className="mb-3 max-w-[12rem]"><select className="input py-2" value={status} onChange={(e) => setStatus(e.target.value)}>
         <option value="en_attente">En attente</option><option value="approuve">Approuvées</option><option value="rejete">Rejetées</option><option value="">Toutes</option></select></div>
       <Card padded={false}>
-        {q.isLoading ? <Loading /> : !q.data?.data.length ? <Empty>Aucune demande.</Empty> : (
+        {q.isLoading ? <Loading /> : !q.data?.data.length ? <Empty icon={PenLine}>Aucune demande.</Empty> : (
           <ul className="divide-y divide-ink-100">{q.data.data.map((c) => (
             <li key={c.id} className="flex flex-wrap items-start justify-between gap-3 px-4 py-3">
               <div className="text-sm">

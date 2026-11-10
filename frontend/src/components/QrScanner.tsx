@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode'
+import { Camera, Flashlight, FlashlightOff } from 'lucide-react'
 import { Alert, Button } from './ui'
 
 /**
@@ -23,7 +24,7 @@ export function QrScanner({ onResult }: { onResult: (text: string) => void }) {
     done.current = false
     qr.start(
       { facingMode: 'environment' },
-      { fps: 12, qrbox: (w, h) => { const s = Math.floor(Math.min(w, h) * 0.72); return { width: s, height: s } }, aspectRatio: 1 },
+      { fps: 12, qrbox: (w, h) => { const s = Math.floor(Math.min(w, h) * 0.7); return { width: s, height: s } }, aspectRatio: 1 },
       (text) => {
         if (done.current) return
         done.current = true
@@ -43,9 +44,7 @@ export function QrScanner({ onResult }: { onResult: (text: string) => void }) {
         ? "Accès à la caméra refusé. Autoriser la caméra dans les réglages du navigateur, ou utiliser la recherche manuelle."
         : 'Caméra indisponible sur cet appareil. Utiliser la recherche par code de parc.')
     })
-    return () => {
-      if (qr.isScanning) qr.stop().catch(() => {})
-    }
+    return () => { if (qr.isScanning) qr.stop().catch(() => {}) }
   }, [onResult])
 
   const toggleTorch = async () => {
@@ -57,14 +56,31 @@ export function QrScanner({ onResult }: { onResult: (text: string) => void }) {
   }
 
   return (
-    <div className="space-y-3">
-      <div className="relative mx-auto aspect-square w-full max-w-sm overflow-hidden rounded-xl bg-ink-950">
-        <div id="qr-reader" className="h-full w-full" />
-        {!running && !error && <p className="absolute inset-0 flex items-center justify-center text-sm text-ink-300">Ouverture de la caméra…</p>}
+    <div className="space-y-4">
+      <div className="relative mx-auto aspect-square w-full max-w-sm overflow-hidden rounded-3xl bg-navy-950 shadow-lift">
+        <div id="qr-reader" className="h-full w-full [&_video]:h-full [&_video]:w-full" />
+        {/* Cadre de visée */}
+        <div className="pointer-events-none absolute inset-[15%]">
+          {['left-0 top-0 border-l-4 border-t-4 rounded-tl-2xl', 'right-0 top-0 border-r-4 border-t-4 rounded-tr-2xl',
+            'left-0 bottom-0 border-l-4 border-b-4 rounded-bl-2xl', 'right-0 bottom-0 border-r-4 border-b-4 rounded-br-2xl'].map((c) => (
+            <span key={c} className={`absolute h-10 w-10 border-white ${c}`} />
+          ))}
+          {running && <span className="absolute inset-x-2 h-0.5 animate-scan-line rounded-full bg-gradient-to-r from-transparent via-fuel-400 to-transparent shadow-[0_0_12px_2px_rgba(251,191,36,.6)]" />}
+        </div>
+        {!running && !error && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-ink-300">
+            <span className="relative flex h-14 w-14 items-center justify-center">
+              <span className="absolute inset-0 animate-pulse-ring rounded-full bg-brand-500/40" />
+              <span className="relative flex h-14 w-14 items-center justify-center rounded-full bg-white/10"><Camera size={24} /></span>
+            </span>
+            <p className="text-sm">Ouverture de la caméra…</p>
+          </div>
+        )}
+        {running && <p className="absolute inset-x-0 bottom-3 text-center text-xs font-medium text-white/80">Placer le QR code du véhicule dans le cadre</p>}
       </div>
       {torch !== null && (
         <div className="flex justify-center">
-          <Button variant="secondary" size="sm" onClick={toggleTorch}>{torch ? 'Éteindre la lampe' : 'Allumer la lampe'}</Button>
+          <Button variant="secondary" size="sm" icon={torch ? FlashlightOff : Flashlight} onClick={toggleTorch}>{torch ? 'Éteindre la lampe' : 'Allumer la lampe'}</Button>
         </div>
       )}
       {error && <Alert tone="warning">{error}</Alert>}

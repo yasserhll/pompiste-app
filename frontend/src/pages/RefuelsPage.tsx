@@ -1,3 +1,4 @@
+import { History, Paperclip, ShieldAlert } from 'lucide-react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
@@ -22,16 +23,16 @@ export default function RefuelsPage() {
 
   return (
     <>
-      <PageHeader title="Historique des ravitaillements" sub="Bons validés et annulés — consultation du détail et des justificatifs" />
+      <PageHeader icon={History} title="Historique des ravitaillements" sub="Bons validés et annulés — détail, séries et justificatifs" />
       <Filters value={f} onChange={update} show={['from', 'to', 'site_id', 'fuel_tank_id', 'vehicle_category', 'work_shift_id', 'status', 'search']} />
-      <label className="mb-3 flex items-center gap-2 text-sm">
-        <input type="checkbox" className="h-4 w-4 accent-brand-600" checked={anomaliesOnly} onChange={(e) => { setAnomaliesOnly(e.target.checked); setPage(1) }} />
-        Uniquement les bons avec anomalie
+      <label className="mb-4 inline-flex cursor-pointer items-center gap-2.5 text-sm font-medium text-ink-700">
+        <input type="checkbox" className="h-4 w-4 rounded accent-brand-600" checked={anomaliesOnly} onChange={(e) => { setAnomaliesOnly(e.target.checked); setPage(1) }} />
+        <ShieldAlert size={16} className="text-amber-600" />Uniquement les bons avec anomalie
         {f.vehicle_id && <button className="ml-3 text-brand-700 underline" onClick={() => update({ ...f, vehicle_id: '' })}>Retirer le filtre véhicule</button>}
       </label>
       <ErrorBox error={q.error} />
       <Card padded={false}>
-        {q.isLoading ? <Loading /> : !q.data?.data.length ? <Empty>Aucun bon pour ces critères.</Empty> : (
+        {q.isLoading ? <Loading /> : !q.data?.data.length ? <Empty icon={History}>Aucun bon pour ces critères.</Empty> : (
           <>
             {/* Mobile : cartes */}
             <ul className="divide-y divide-ink-100 md:hidden">
@@ -58,16 +59,16 @@ export default function RefuelsPage() {
                 <tbody>
                   {q.data.data.map((r) => (
                     <tr key={r.id} className="cursor-pointer" onClick={() => navigate(`/bons/${r.id}`)}>
-                      <td className="font-medium">{r.voucher_number}{r.paper_voucher_number && <span className="block text-xs text-ink-500">papier {r.paper_voucher_number}</span>}</td>
+                      <td className="font-semibold text-ink-900">{r.voucher_number}{r.paper_voucher_number && <span className="block text-xs text-ink-500">papier {r.paper_voucher_number}</span>}</td>
                       <td>{dateTime(r.refueled_at)}</td>
                       <td><span className="font-semibold">{r.vehicle_code}</span><span className="block text-xs text-ink-500">{r.vehicle_immatriculation}</span></td>
                       <td>{r.driver_name ?? '—'}<span className="block text-xs text-ink-500">{r.shift_name}</span></td>
                       <td>{r.pump_attendant_name}</td>
                       <td>{r.tank?.code}</td>
                       <td className="text-right text-xs tabular-nums">{Number(r.index_start).toLocaleString('fr-FR')}<br />{Number(r.index_end).toLocaleString('fr-FR')}</td>
-                      <td className="text-right font-semibold tabular-nums">{litres(r.quantity_l)}</td>
+                      <td className="text-right font-bold tabular-nums text-ink-900">{litres(r.quantity_l)}</td>
                       <td className="text-right tabular-nums">{counter(r.counter_value, r.counter_unit)}</td>
-                      <td>{r.attachments?.length ?? 0}</td>
+                      <td><span className="inline-flex items-center gap-1 text-ink-500"><Paperclip size={14} />{r.attachments?.length ?? 0}</span></td>
                       <td>{r.status === 'annule' ? <Badge color="red">Annulé</Badge> : r.has_anomaly ? <Badge color="amber">Anomalie</Badge> : <Badge color="green">Validé</Badge>}</td>
                     </tr>
                   ))}

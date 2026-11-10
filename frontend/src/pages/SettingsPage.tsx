@@ -1,6 +1,7 @@
+import { CheckCircle2, Clock, Cog, Save, ScrollText, ShieldCheck, Users as UsersIcon } from 'lucide-react'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
-import { Alert, Badge, Button, Card, Empty, ErrorBox, Field, Loading, Modal, PageHeader, Pagination } from '../components/ui'
+import { Alert, Badge, Button, Card, Empty, ErrorBox, Field, Loading, Modal, PageHeader, Pagination, Tabs } from '../components/ui'
 import { api, type Paginated } from '../lib/api'
 import { dateTime, ROLE_LABEL } from '../lib/format'
 import type { Role, Site, Tank } from '../lib/types'
@@ -12,10 +13,8 @@ export default function SettingsPage() {
   const tabs: [Tab, string][] = [['regles', 'Règles de contrôle'], ['shifts', 'Horaires des shifts'], ['utilisateurs', 'Utilisateurs'], ['audit', "Journal d'audit"]]
   return (
     <>
-      <PageHeader title="Paramètres du module" />
-      <div className="mb-4 flex flex-wrap gap-2">
-        {tabs.map(([k, l]) => <button key={k} onClick={() => setTab(k)} className={`rounded-full px-4 py-1.5 text-sm font-semibold ${tab === k ? 'bg-ink-900 text-white' : 'bg-white text-ink-700 ring-1 ring-ink-200'}`}>{l}</button>)}
-      </div>
+      <PageHeader icon={Cog} title="Paramètres du module" sub="Règles appliquées par le serveur, horaires, comptes et traçabilité" />
+      <Tabs value={tab} onChange={setTab} items={tabs.map(([k, l]) => ({ value: k, label: l, icon: { regles: ShieldCheck, shifts: Clock, utilisateurs: UsersIcon, audit: ScrollText }[k] }))} />
       {tab === 'regles' && <Rules />}
       {tab === 'shifts' && <Shifts />}
       {tab === 'utilisateurs' && <Users />}
@@ -49,7 +48,7 @@ function Rules() {
   })
   if (q.isLoading) return <Loading />
   return (
-    <Card title="Règles appliquées par le serveur">
+    <Card title="Règles appliquées par le serveur" icon={ShieldCheck}>
       <div className="grid gap-4 sm:grid-cols-2">
         {RULES.map((r) => r.type === 'bool' ? (
           <label key={r.key} className="flex items-center gap-3 rounded-lg border border-ink-100 p-3 text-sm">
@@ -60,8 +59,8 @@ function Rules() {
         ))}
       </div>
       <div className="mt-4 flex items-center gap-3">
-        <Button loading={m.isPending} onClick={() => m.mutate()}>Enregistrer</Button>
-        {m.isSuccess && <span className="text-sm text-emerald-700">Enregistré.</span>}
+        <Button icon={Save} loading={m.isPending} onClick={() => m.mutate()}>Enregistrer</Button>
+        {m.isSuccess && <span className="flex items-center gap-1 text-sm font-medium text-emerald-700"><CheckCircle2 size={16} />Enregistré</span>}
       </div>
       <div className="mt-3"><ErrorBox error={m.error} /></div>
     </Card>

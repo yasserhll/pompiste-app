@@ -1,6 +1,7 @@
+import { CalendarClock, MapPin, Plus, Truck, Users } from 'lucide-react'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { Alert, Badge, Button, Card, Empty, ErrorBox, Field, Loading, Modal, PageHeader, Pagination } from '../components/ui'
+import { Alert, Badge, Button, Card, Empty, ErrorBox, Field, Loading, Modal, PageHeader, Pagination, Tabs } from '../components/ui'
 import { api, type Paginated } from '../lib/api'
 import { CATEGORY_LABEL, date, STATUS_LABEL, todayISO } from '../lib/format'
 import type { Site, VehicleCard } from '../lib/types'
@@ -12,10 +13,8 @@ export default function ReferencePage() {
   const tabs: [Tab, string][] = [['vehicules', 'Véhicules'], ['conducteurs', 'Conducteurs'], ['affectations', 'Affectations'], ['sites', 'Sites']]
   return (
     <>
-      <PageHeader title="Parc et conducteurs" sub="Référentiel utilisé pour le scan et l'affectation automatique" />
-      <div className="mb-4 flex flex-wrap gap-2">
-        {tabs.map(([k, l]) => <button key={k} onClick={() => setTab(k)} className={`rounded-full px-4 py-1.5 text-sm font-semibold ${tab === k ? 'bg-ink-900 text-white' : 'bg-white text-ink-700 ring-1 ring-ink-200'}`}>{l}</button>)}
-      </div>
+      <PageHeader icon={Truck} title="Parc et conducteurs" sub="Référentiel utilisé pour le scan et l'affectation automatique" />
+      <Tabs value={tab} onChange={setTab} items={tabs.map(([k, l]) => ({ value: k, label: l, icon: { vehicules: Truck, conducteurs: Users, affectations: CalendarClock, sites: MapPin }[k] }))} />
       {tab === 'vehicules' && <Vehicles />}
       {tab === 'conducteurs' && <Drivers />}
       {tab === 'affectations' && <Assignments />}
@@ -38,7 +37,7 @@ function Vehicles() {
         <select className="input max-w-[11rem] py-2" value={f.site_id} onChange={set('site_id')}><option value="">Tous les sites</option>{sites.data?.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select>
         <select className="input max-w-[11rem] py-2" value={f.category} onChange={set('category')}><option value="">Toutes catégories</option>{Object.entries(CATEGORY_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
         <select className="input max-w-[11rem] py-2" value={f.status} onChange={set('status')}><option value="">Tous statuts</option>{Object.entries(STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
-        <Button className="ml-auto" onClick={() => setEdit('new')}>Ajouter un véhicule</Button>
+        <Button className="ml-auto" icon={Plus} onClick={() => setEdit('new')}>Ajouter un véhicule</Button>
       </div>
       <Card padded={false}>
         {q.isLoading ? <Loading /> : !q.data?.data.length ? <Empty>Aucun véhicule.</Empty> : (
@@ -47,7 +46,7 @@ function Vehicles() {
               <thead><tr><th>Code parc</th><th>Immatriculation</th><th>Type</th><th>Catégorie</th><th>Compteur</th><th>Réservoir</th><th>Site</th><th>Statut</th><th /></tr></thead>
               <tbody>{q.data.data.map((v) => (
                 <tr key={v.id}>
-                  <td className="font-semibold">{v.code_parc}</td><td>{v.immatriculation}</td><td>{v.type_label}</td><td>{CATEGORY_LABEL[v.category]}</td>
+                  <td className="font-semibold text-ink-900">{v.code_parc}</td><td>{v.immatriculation}</td><td>{v.type_label}</td><td>{CATEGORY_LABEL[v.category]}</td>
                   <td>{v.counter_unit === 'h' ? 'Heures' : 'Km'}</td><td>{v.tank_capacity_l ? `${Number(v.tank_capacity_l)} L` : '—'}</td><td>{v.site?.name}</td>
                   <td><Badge color={v.status === 'actif' ? 'green' : v.status === 'en_panne' ? 'amber' : 'red'}>{STATUS_LABEL[v.status]}</Badge></td>
                   <td><Button size="sm" variant="ghost" onClick={() => setEdit(v)}>Modifier</Button></td>
@@ -139,7 +138,7 @@ function Assignments() {
     <>
       <div className="card mb-3 flex flex-wrap items-end gap-3 p-3">
         <Field label="En vigueur le"><input type="date" className="input py-2" value={activeOn} onChange={(e) => { setActiveOn(e.target.value); setPage(1) }} /></Field>
-        <Button className="ml-auto" onClick={() => setOpen(true)}>Nouvelle affectation</Button>
+        <Button className="ml-auto" icon={Plus} onClick={() => setOpen(true)}>Nouvelle affectation</Button>
       </div>
       <Alert tone="info">Équipe 1 = shift du matin, équipe 2 = shift du soir (selon les horaires des Paramètres). Une affectation n'est jamais supprimée : elle est clôturée, et les anciens bons conservent le conducteur du moment.</Alert>
       <ErrorBox error={end.error} />

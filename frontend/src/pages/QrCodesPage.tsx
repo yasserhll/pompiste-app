@@ -1,3 +1,4 @@
+import { Ban, Eye, Printer, QrCode, RefreshCw, Sparkles } from 'lucide-react'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { Alert, Badge, Button, Card, Empty, ErrorBox, Field, Loading, Modal, PageHeader, Pagination } from '../components/ui'
@@ -29,10 +30,10 @@ export default function QrCodesPage() {
 
   return (
     <>
-      <PageHeader title="QR codes du parc" sub="Un QR permanent par véhicule ; il ne contient qu'un jeton aléatoire, sans donnée du véhicule."
+      <PageHeader icon={QrCode} title="QR codes du parc" sub="Un QR permanent par véhicule — il ne contient qu'un jeton aléatoire, aucune donnée du véhicule"
         actions={<>
-          <Button variant="brand" loading={gen.isPending} onClick={() => gen.mutate(undefined)}>Générer pour tout le parc</Button>
-          <Button variant="secondary" loading={pdf.isPending} onClick={() => pdf.mutate(f.site_id ? { site_id: Number(f.site_id) } : {})}>
+          <Button variant="brand" icon={Sparkles} loading={gen.isPending} onClick={() => gen.mutate(undefined)}>Générer pour tout le parc</Button>
+          <Button variant="secondary" icon={Printer} loading={pdf.isPending} onClick={() => pdf.mutate(f.site_id ? { site_id: Number(f.site_id) } : {})}>
             Imprimer {f.site_id ? 'le site' : 'tout le parc'} (PDF)</Button>
         </>} />
       {gen.data && <div className="mb-3"><Alert tone="success">{gen.data.generated} QR code(s) généré(s). Les QR existants n'ont pas été modifiés.</Alert></div>}
@@ -49,7 +50,7 @@ export default function QrCodesPage() {
         </div>}
       </div>
       <Card padded={false}>
-        {q.isLoading ? <Loading /> : !rows.length ? <Empty>Aucun véhicule. Importer le parc depuis le fichier d'affectation.</Empty> : (
+        {q.isLoading ? <Loading /> : !rows.length ? <Empty icon={QrCode}>Aucun véhicule. Importer le parc depuis le fichier d'affectation.</Empty> : (
           <>
             <div className="overflow-x-auto"><table className="table-base">
               <thead><tr><th><input type="checkbox" checked={allSel} onChange={() => setSel(allSel ? [] : rows.map((r) => r.id))} /></th>
@@ -61,9 +62,9 @@ export default function QrCodesPage() {
                   <td>{v.has_active_qr ? <Badge color="green">Actif</Badge> : <Badge>Aucun</Badge>}</td>
                   <td className="space-x-1 text-right">
                     {v.has_active_qr ? <>
-                      <Button size="sm" variant="ghost" onClick={() => setShow(v)}>Voir</Button>
-                      <Button size="sm" variant="ghost" onClick={() => setAction({ v, kind: 'regenerate' })}>Remplacer</Button>
-                      <Button size="sm" variant="ghost" onClick={() => setAction({ v, kind: 'revoke' })}>Désactiver</Button>
+                      <Button size="sm" variant="ghost" icon={Eye} onClick={() => setShow(v)}>Voir</Button>
+                      <Button size="sm" variant="ghost" icon={RefreshCw} onClick={() => setAction({ v, kind: 'regenerate' })}>Remplacer</Button>
+                      <Button size="sm" variant="ghost" icon={Ban} onClick={() => setAction({ v, kind: 'revoke' })}>Désactiver</Button>
                     </> : <Button size="sm" variant="secondary" onClick={() => gen.mutate([v.id])}>Générer</Button>}
                   </td>
                 </tr>))}</tbody>

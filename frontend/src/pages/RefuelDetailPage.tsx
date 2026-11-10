@@ -1,3 +1,4 @@
+import { Ban, Camera, CheckCircle2, FileDown, Fuel, History, ImageOff, PenLine, Receipt, ShieldAlert } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
@@ -32,12 +33,12 @@ export default function RefuelDetailPage() {
 
   return (
     <>
-      <PageHeader title={`Bon ${r.voucher_number}`} sub={`${r.vehicle_code} · ${dateTime(r.refueled_at)}`}
+      <PageHeader icon={Receipt} title={`Bon ${r.voucher_number}`} sub={`${r.vehicle_code} · ${dateTime(r.refueled_at)}`}
         actions={<>
-          <Button variant="secondary" onClick={() => download(`/refuels/${r.id}/voucher`)}>Bon PDF</Button>
-          {r.status === 'valide' && user?.permissions.request_correction && <Button variant="secondary" onClick={() => setModal('correction')}>Demander une correction</Button>}
+          <Button variant="secondary" icon={FileDown} onClick={() => download(`/refuels/${r.id}/voucher`)}>Bon PDF</Button>
+          {r.status === 'valide' && user?.permissions.request_correction && <Button variant="secondary" icon={PenLine} onClick={() => setModal('correction')}>Demander une correction</Button>}
           {r.status === 'valide' && (user?.role === 'admin' || user?.permissions.request_correction) && (
-            <Button variant="danger" onClick={() => setModal('annulation')}>{user?.role === 'admin' ? 'Annuler le bon' : "Demander l'annulation"}</Button>
+            <Button variant="danger" icon={Ban} onClick={() => setModal('annulation')}>{user?.role === 'admin' ? 'Annuler le bon' : "Demander l'annulation"}</Button>
           )}
         </>} />
 
@@ -47,7 +48,7 @@ export default function RefuelDetailPage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <Card title="Opération" className="lg:col-span-2">
+        <Card title="Opération" icon={Fuel} className="lg:col-span-2">
           <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
             <Item k="Véhicule" v={<><b>{r.vehicle_code}</b> — {r.vehicle_immatriculation}<br /><span className="text-ink-500">{r.vehicle_type}</span></>} />
             <Item k="Conducteur" v={<>{r.driver_name ?? <span className="text-amber-700">Non affecté</span>}{s.driver_reason && <span className="block text-xs text-ink-500">Motif : {s.driver_reason}</span>}</>} />
@@ -67,21 +68,21 @@ export default function RefuelDetailPage() {
           </dl>
         </Card>
 
-        <Card title="Anomalies">
+        <Card title="Anomalies" icon={ShieldAlert}>
           {r.anomalies.length ? (
             <ul className="space-y-2 text-sm">{r.anomalies.map((a) => (
-              <li key={a.id} className="rounded-lg border border-amber-200 bg-amber-50 p-2">
+              <li key={a.id} className="rounded-xl border border-amber-200 bg-amber-50/80 p-3 text-amber-900">
                 <p>{a.message}</p>
                 <p className="mt-1 text-xs text-ink-500">{a.status === 'ouverte' ? 'Ouverte' : `${a.status} — ${a.resolution_note ?? ''}`}</p>
               </li>))}</ul>
-          ) : <p className="text-sm text-emerald-700">Aucune anomalie.</p>}
+          ) : <p className="flex items-center gap-2 text-sm font-medium text-emerald-700"><CheckCircle2 size={17} />Aucune anomalie.</p>}
         </Card>
 
-        <Card title={`Photos / justificatifs (${r.attachments.length})`} className="lg:col-span-3">
-          {r.attachments.length ? <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">{r.attachments.map((a) => <AttachmentThumb key={a.id} a={a} />)}</div> : <Empty>Aucune photo jointe.</Empty>}
+        <Card title={`Photos / justificatifs (${r.attachments.length})`} icon={Camera} className="lg:col-span-3">
+          {r.attachments.length ? <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">{r.attachments.map((a) => <AttachmentThumb key={a.id} a={a} />)}</div> : <Empty icon={ImageOff}>Aucune photo jointe.</Empty>}
         </Card>
 
-        <Card title="Historique des modifications" className="lg:col-span-3" padded={false}>
+        <Card title="Historique des modifications" icon={History} className="lg:col-span-3" padded={false}>
           <ul className="divide-y divide-ink-100 text-sm">
             {r.corrections.map((c) => (
               <li key={`c${c.id}`} className="px-4 py-2.5">
@@ -118,12 +119,12 @@ function AttachmentThumb({ a }: { a: Attachment }) {
   }, [a.id, isImg])
   return (
     <>
-      <button className="overflow-hidden rounded-lg border border-ink-200 text-left" onClick={() => (isImg ? setOpen(true) : download(`/attachments/${a.id}`))}>
+      <button className="card-hover overflow-hidden rounded-xl border border-ink-200 text-left" onClick={() => (isImg ? setOpen(true) : download(`/attachments/${a.id}`))}>
         <div className="aspect-[4/3] bg-ink-100">{url ? <img src={url} alt={a.original_name ?? ''} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-xs text-ink-500">{isImg ? '…' : 'PDF'}</div>}</div>
         <p className="truncate px-2 py-1 text-xs">{a.kind === 'bon_papier' ? 'Bon papier' : a.original_name}</p>
       </button>
       {open && url && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-950/90 p-4" onClick={() => setOpen(false)}>
+        <div className="fixed inset-0 z-50 flex animate-fade-up items-center justify-center bg-ink-950/90 p-4 backdrop-blur" onClick={() => setOpen(false)}>
           <img src={url} alt="" className="max-h-full max-w-full rounded-lg" />
         </div>
       )}

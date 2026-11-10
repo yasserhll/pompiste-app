@@ -1,3 +1,4 @@
+import { Droplets, Plus } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { PhotoPicker, type PhotoItem } from '../components/PhotoPicker'
@@ -27,8 +28,8 @@ export default function DeliveriesPage() {
 
   return (
     <>
-      <PageHeader title="Entrées de gasoil" sub="Approvisionnements des citernes (le stock augmente à la validation)"
-        actions={canDeliver && <Button variant="brand" onClick={() => setOpen(true)}>Nouvelle entrée</Button>} />
+      <PageHeader icon={Droplets} title="Entrées de gasoil" sub="Approvisionnements des citernes — le stock augmente à la validation"
+        actions={canDeliver && <Button variant="brand" icon={Plus} onClick={() => setOpen(true)}>Nouvelle entrée</Button>} />
       <div className="mb-3 max-w-xs">
         <select className="input" value={tank} onChange={(e) => { setTank(e.target.value); setPage(1) }}>
           <option value="">Toutes les citernes</option>{tanks.data?.map((t) => <option key={t.id} value={t.id}>{t.code}</option>)}
@@ -36,14 +37,14 @@ export default function DeliveriesPage() {
       </div>
       <ErrorBox error={q.error} />
       <Card padded={false}>
-        {q.isLoading ? <Loading /> : !q.data?.data.length ? <Empty>Aucune entrée enregistrée.</Empty> : (
+        {q.isLoading ? <Loading /> : !q.data?.data.length ? <Empty icon={Droplets}>Aucune entrée enregistrée.</Empty> : (
           <>
             <div className="overflow-x-auto"><table className="table-base">
               <thead><tr><th>Date</th><th>Citerne</th><th className="text-right">Quantité</th><th>Fournisseur</th><th>N° BL</th><th>Référence</th><th>Saisi par</th><th>Pièces</th><th>Statut</th><th /></tr></thead>
               <tbody>{q.data.data.map((d) => (
                 <tr key={d.id}>
                   <td>{dateTime(d.delivered_at)}</td><td className="font-medium">{d.tank.code}</td>
-                  <td className="text-right font-semibold tabular-nums">{litres(d.quantity_l)}</td>
+                  <td className="text-right font-bold tabular-nums text-emerald-600">+{litres(d.quantity_l)}</td>
                   <td>{d.supplier}</td><td>{d.delivery_note_number}</td><td>{d.delivery_reference}</td><td>{d.user.name}</td><td>{d.attachments_count}</td>
                   <td>{d.status === 'annule' ? <Badge color="red">Annulée</Badge> : <Badge color="green">Validée</Badge>}</td>
                   <td>{user?.role === 'admin' && d.status === 'valide' && <Button size="sm" variant="ghost" onClick={() => setCancel(d)}>Annuler</Button>}</td>
@@ -76,7 +77,7 @@ function DeliveryForm({ tanks, onClose }: { tanks: Tank[]; onClose: () => void }
   const err = m.error as ApiError | null
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF((x) => ({ ...x, [k]: e.target.value }))
   return (
-    <Modal open onClose={onClose} title="Nouvelle entrée de gasoil"
+    <Modal open onClose={onClose} icon={Droplets} title="Nouvelle entrée de gasoil"
       footer={<><Button variant="secondary" onClick={onClose}>Annuler</Button>
         <Button loading={m.isPending} disabled={photos.some((p) => p.status === 'envoi')} onClick={() => m.mutate()}>Valider l'entrée</Button></>}>
       <div className="grid grid-cols-2 gap-3">

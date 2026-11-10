@@ -1,3 +1,4 @@
+import { Download, FileSpreadsheet, SlidersHorizontal } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { Alert, Button, Card, ErrorBox, Field, PageHeader } from '../components/ui'
@@ -44,9 +45,9 @@ export default function ReportsPage() {
 
   return (
     <>
-      <PageHeader title="Rapports Excel" sub="Générés depuis la base de données, au format du fichier terrain « mobile 1.xlsx »" />
+      <PageHeader icon={FileSpreadsheet} title="Rapports Excel" sub="Générés depuis la base de données, au format du fichier terrain « mobile 1.xlsx »" />
       <div className="grid gap-4 lg:grid-cols-3">
-        <Card title="Paramètres du rapport" className="lg:col-span-2">
+        <Card title="Paramètres du rapport" icon={SlidersHorizontal} className="lg:col-span-2">
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Rapport">
               <select className="input" value={f.scope} onChange={set('scope')}>
@@ -88,10 +89,10 @@ export default function ReportsPage() {
           </div>
           <div className="mt-4 space-y-3">
             <ErrorBox error={error} />
-            <Button variant="brand" size="lg" loading={busy} disabled={f.scope === 'vehicule' && !f.vehicle_id} onClick={run}>Télécharger le rapport Excel</Button>
+            <Button variant="brand" size="lg" icon={Download} loading={busy} disabled={f.scope === 'vehicule' && !f.vehicle_id} onClick={run}>Télécharger le rapport Excel</Button>
           </div>
         </Card>
-        <Card title="Contenu du fichier">
+        <Card title="Contenu du fichier" icon={FileSpreadsheet}>
           <ul className="list-disc space-y-1.5 pl-4 text-sm text-ink-700">
             <li>Une feuille par citerne, colonnes du modèle : Date, Qte, Fournisseur, N° de bon, Heure, Code, Immatriculation, Kilométrage, Qte, Remarque, Série départ, Série fin, Stock réel.</li>
             <li>Ligne de stock d'ouverture, puis chaque mouvement dans l'ordre chronologique ; le solde est une formule (M = précédent + entrée − sortie).</li>

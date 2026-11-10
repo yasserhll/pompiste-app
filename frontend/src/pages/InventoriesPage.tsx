@@ -1,3 +1,4 @@
+import { Ruler, Scale } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { PhotoPicker, type PhotoItem } from '../components/PhotoPicker'
@@ -30,11 +31,11 @@ export default function InventoriesPage() {
 
   return (
     <>
-      <PageHeader title="Inventaires et ajustements" sub="Le stock réel est une mesure physique validée — jamais le stock théorique recopié."
-        actions={<><Button variant="brand" onClick={() => setForm('inventaire')}>Nouvel inventaire</Button><Button variant="secondary" onClick={() => setForm('ajustement')}>Demande d'ajustement</Button></>} />
+      <PageHeader icon={Ruler} title="Inventaires et ajustements" sub="Le stock réel est une mesure physique validée — jamais le stock théorique recopié"
+        actions={<><Button variant="brand" icon={Ruler} onClick={() => setForm('inventaire')}>Nouvel inventaire</Button><Button variant="secondary" icon={Scale} onClick={() => setForm('ajustement')}>Demande d'ajustement</Button></>} />
       <div className="space-y-4">
-        <Card title="Inventaires physiques" padded={false}>
-          {inv.isLoading ? <Loading /> : !inv.data?.data.length ? <Empty>Aucun inventaire.</Empty> : (
+        <Card title="Inventaires physiques" icon={Ruler} padded={false}>
+          {inv.isLoading ? <Loading /> : !inv.data?.data.length ? <Empty icon={Ruler}>Aucun inventaire.</Empty> : (
             <div className="overflow-x-auto"><table className="table-base">
               <thead><tr><th>Date de mesure</th><th>Citerne</th><th className="text-right">Mesuré</th><th className="text-right">Théorique</th><th className="text-right">Écart</th><th>Méthode</th><th>Par</th><th>Statut</th><th /></tr></thead>
               <tbody>{inv.data.data.map((i) => (
@@ -50,8 +51,8 @@ export default function InventoriesPage() {
             </table></div>
           )}
         </Card>
-        <Card title="Ajustements de stock" padded={false}>
-          {adj.isLoading ? <Loading /> : !adj.data?.data.length ? <Empty>Aucun ajustement.</Empty> : (
+        <Card title="Ajustements de stock" icon={Scale} padded={false}>
+          {adj.isLoading ? <Loading /> : !adj.data?.data.length ? <Empty icon={Scale}>Aucun ajustement.</Empty> : (
             <div className="overflow-x-auto"><table className="table-base">
               <thead><tr><th>Date</th><th>Citerne</th><th className="text-right">Quantité</th><th>Motif</th><th>Demandé par</th><th>Statut</th><th /></tr></thead>
               <tbody>{adj.data.data.map((a) => (
