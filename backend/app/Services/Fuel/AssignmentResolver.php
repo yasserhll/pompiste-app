@@ -106,8 +106,9 @@ class AssignmentResolver
                 "Aucun conducteur affecté à {$vehicle->code_parc}" . ($shift ? " pour le shift {$shift->name}" : '') . '.');
         }
         if ($vehicle->status !== 'actif') {
-            $warnings[] = Warning::alert('vehicule_inactif',
-                "Le véhicule {$vehicle->code_parc} est marqué « {$vehicle->status} »" . ($vehicle->status_note ? " ({$vehicle->status_note})" : '') . '.');
+            $label = ['en_panne' => 'en panne', 'inactif' => 'inactif'][$vehicle->status] ?? $vehicle->status;
+            $note = $vehicle->status_note && mb_strtolower($vehicle->status_note) !== $label ? " ({$vehicle->status_note})" : '';
+            $warnings[] = Warning::alert('vehicule_inactif', "Le véhicule {$vehicle->code_parc} est déclaré {$label}{$note}.");
         }
         if ($tankSiteId && $vehicle->site_id && $vehicle->site_id !== $tankSiteId) {
             $warnings[] = Warning::alert('vehicule_autre_site',

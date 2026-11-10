@@ -6,7 +6,7 @@ Standalone fuel (gasoil) distribution app: pump attendants scan a vehicle QR cod
 
 ## Layout
 - `backend/` — Laravel 12 + Sanctum (token auth), MySQL `pompiste_app` (tests: `pompiste_app_test`).
-- `frontend/` — React (Vite + TypeScript), mobile-first.
+- `frontend/` — React 18 (Vite + TypeScript + Tailwind), mobile-first.
 
 ## Commands (Windows / XAMPP)
 XAMPP's PHP crashes with opcache enabled ("Opcode handlers are unusable due to ASLR"): always pass `-d opcache.enable_cli=0`.
@@ -22,6 +22,22 @@ php -d opcache.enable_cli=0 artisan fuel:import-materiel "<Affectation de materi
 php -d opcache.enable_cli=0 artisan fuel:verify-stock               # tank cache = movement journal = vouchers
 ```
 Composer: `php -d opcache.enable_cli=0 /c/ProgramData/ComposerSetup/bin/composer.phar …`. MySQL CLI: `/c/xampp/mysql/bin/mysql.exe`.
+
+```bash
+cd frontend
+npm run dev            # http://localhost:5173, /api proxied to API_PROXY_TARGET (default http://127.0.0.1:8000)
+npm run dev:https      # HTTPS on the LAN (.env.https) — phones only open the camera over HTTPS
+npm test               # vitest (src/**/*.test.ts); single file: npx vitest run src/lib/num.test.ts
+npm run build          # tsc -b + vite build
+```
+Ports 5173/8000 may already be used by another local project; pass `--port` / `API_PROXY_TARGET` to avoid hitting the wrong backend.
+
+## Architecture (frontend)
+- React 18 + react-router 6 + TanStack Query + Tailwind (no component library; primitives in `src/components/ui.tsx`). All API calls go through `src/lib/api.ts` (`ApiError` exposes `status`, field `errors`, `warnings`, `requiresConfirmation` for 409, `offline`).
+- `pages/RefuelPage.tsx` is the pompiste flow: scan (`html5-qrcode`, or manual search) → entry → photos → summary → validate. The draft (incl. `client_uuid` and uploaded attachment ids) is kept in localStorage so a network cut or reload loses nothing and a retry cannot duplicate the voucher. `/scan/:token` is the URL printed in the QR codes.
+- `src/lib/num.ts` mirrors `Num::parse` for instant feedback; the raw string is still what is sent.
+- Dates: display the wall-clock digits from the API string (`format.ts`), never convert with `Intl` time zones — browser tz data disagrees on Africa/Casablanca (Chrome 156 gives UTC+0, PHP/MySQL/Windows UTC+1).
+- Role-based route guards in `App.tsx` are cosmetic; the backend enforces access.
 
 ## Architecture (backend)
 - **Stock is a ledger.** `fuel_stock_movements` is append-only; `fuel_tanks.current_stock_l` is a cache written only by `App\Services\Fuel\StockService::apply()`, inside a transaction with the tank row locked (`lockTank`). Never update stock or `last_voucher_seq` any other way.
