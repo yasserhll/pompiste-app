@@ -67,10 +67,11 @@ function VehicleForm({ v, sites, onClose }: { v: VehicleCard | null; sites: Site
     code_parc: v?.code_parc ?? '', immatriculation: v?.immatriculation ?? '', chassis: v?.chassis ?? '', type_label: v?.type_label ?? '',
     site_id: v?.site?.id ? String(v.site.id) : '', category: v?.category ?? 'camion', counter_unit: v?.counter_unit ?? 'km',
     tank_capacity_l: v?.tank_capacity_l ? String(Number(v.tank_capacity_l)) : '', status: v?.status ?? 'actif', status_note: v?.status_note ?? '',
+    owner_company: v?.owner_company ?? '',
   })
   const m = useMutation({
     mutationFn: () => {
-      const body = { ...f, site_id: f.site_id ? Number(f.site_id) : null, tank_capacity_l: f.tank_capacity_l || null, chassis: f.chassis || null, status_note: f.status_note || null }
+      const body = { ...f, site_id: f.site_id ? Number(f.site_id) : null, tank_capacity_l: f.tank_capacity_l || null, chassis: f.chassis || null, status_note: f.status_note || null, owner_company: f.owner_company.trim().toUpperCase() || null }
       return v ? api.put(`/vehicles/${v.id}`, body) : api.post('/vehicles', body)
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['vehicles'] }); onClose() },
@@ -89,6 +90,7 @@ function VehicleForm({ v, sites, onClose }: { v: VehicleCard | null; sites: Site
         <Field label="Capacité réservoir (L)" hint="Pour détecter les quantités anormales"><input className="input" inputMode="decimal" value={f.tank_capacity_l} onChange={set('tank_capacity_l')} /></Field>
         <Field label="Statut"><select className="input" value={f.status} onChange={set('status')}>{Object.entries(STATUS_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></Field>
         <Field label="Note de statut"><input className="input" value={f.status_note} onChange={set('status_note')} /></Field>
+        <Field label="Société" hint="Pré-coche la case du bon (TRANSWIN, LAHLAL, LEL…)" className="col-span-2"><input className="input uppercase" value={f.owner_company} onChange={set('owner_company')} /></Field>
       </div>
       <ErrorBox error={m.error} />
     </Modal>

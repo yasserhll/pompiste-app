@@ -36,8 +36,10 @@ class ControlController extends FuelController
         $file = $d['file'];
         $disk = config('fuel.attachments_disk');
         $path = $file->store('fuel/' . now()->format('Y/m'), $disk);
+        $mime = $file->getMimeType();
         $att = FuelAttachment::create([
             'kind' => $d['kind'] ?? 'photo', 'disk' => $disk, 'path' => $path,
+            'thumb_path' => app(\App\Services\Fuel\Thumbnailer::class)->make($disk, $path, $mime),
             'original_name' => mb_substr($file->getClientOriginalName(), 0, 255), 'mime' => $file->getMimeType(),
             'size' => $file->getSize(), 'sha256' => hash_file('sha256', $file->getRealPath()), 'uploaded_by' => $r->user()->id,
         ]);
@@ -57,6 +59,12 @@ class ControlController extends FuelController
             $tank = $owner ? FuelTank::find($owner->fuel_tank_id) : null;
             if (!$tank || !$this->access->can($u, 'view', $tank)) abort(403);
             if ($owner instanceof FuelRefuel && $u->isPumpAttendant() && $owner->pump_attendant_id !== $u->id) abort(403);
+        }
+        // ?thumb=1 : miniature (listes), sinon le fichier original
+        if ($r->boolean('thumb') && $att->thumb_path) {
+            return Storage::disk($att->disk)->response($att->thumb_path, 'miniature.jpg', [
+                'Content-Type' => 'image/jpeg', 'Cache-Control' => 'private, max-age=86400',
+            ]);
         }
         return Storage::disk($att->disk)->response($att->path, $att->original_name, [
             'Content-Type' => $att->mime, 'Cache-Control' => 'private, max-age=600',

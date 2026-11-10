@@ -58,6 +58,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/tanks/{id}', [TankController::class, 'show']);
     Route::put('/tanks/{id}', [TankController::class, 'update']);
     Route::get('/tanks/{id}/movements', [TankController::class, 'movements']);
+    Route::get('/tanks/{id}/ledger', [TankController::class, 'ledger']);
     Route::get('/tanks/{id}/verify', [TankController::class, 'verify']);
     Route::put('/tanks/{id}/users', [TankController::class, 'syncUsers']);
     Route::post('/tanks/{id}/dispensers', [TankController::class, 'storeDispenser']);

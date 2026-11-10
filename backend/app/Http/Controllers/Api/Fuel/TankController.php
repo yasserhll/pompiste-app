@@ -55,6 +55,25 @@ class TankController extends FuelController
         return $q->orderByDesc('occurred_at')->orderByDesc('id')->paginate($this->perPage($r));
     }
 
+    // GET /tanks/{id}/ledger?from=&to= — fiche citerne (format du fichier terrain) avec justificatifs
+    public function ledger(Request $r, int $id)
+    {
+        $this->requireModule($r);
+        $tank = $this->tankFor($r, $id, 'view');
+        if (!$this->access->canSeeStock($r->user(), $tank)) abort(403, 'Stock non visible pour votre rôle.');
+        $p = \App\Services\Fuel\ReportPeriod::fromRequest($r->only(['period', 'date', 'month', 'from', 'to', 'month_start_day']) + ['period' => 'mois']);
+        $data = app(\App\Services\Fuel\TankLedger::class)->build($tank, $p->from, $p->to);
+        // Un pompiste ne voit le détail (bons, photos) que de ses propres ravitaillements
+        if ($r->user()->isPumpAttendant()) {
+            $mine = \App\Models\Fuel\FuelRefuel::whereIn('id', collect($data['rows'])->pluck('refuel_id')->filter())
+                ->where('pump_attendant_id', $r->user()->id)->pluck('id')->all();
+            foreach ($data['rows'] as &$row) {
+                if ($row['refuel_id'] && !in_array($row['refuel_id'], $mine, true)) $row['attachments'] = [];
+            }
+        }
+        return response()->json($data + ['label' => $p->label]);
+    }
+
     public function store(Request $r)
     {
         $this->requireModule($r);

@@ -25,6 +25,7 @@ export default function SettingsPage() {
 
 const RULES: { key: string; label: string; hint?: string; type: 'number' | 'bool' }[] = [
   { key: 'report_month_start_day', label: 'Début du mois de rapport (jour)', hint: '27 = du 27 au 26 ; 1 = mois calendaire', type: 'number' },
+  { key: 'transfer_min_litres', label: 'Seuil de transfert vers un camion-citerne (L)', hint: 'Au-delà : « remis à la citerne » ; en dessous : plein du moteur', type: 'number' },
   { key: 'low_stock_threshold_l', label: 'Seuil de stock faible par défaut (L)', type: 'number' },
   { key: 'declared_quantity_tolerance_l', label: 'Tolérance quantité annoncée / calculée (L)', type: 'number' },
   { key: 'max_refuel_l', label: 'Quantité max. sans capacité de réservoir connue (L)', type: 'number' },
@@ -43,7 +44,10 @@ function Rules() {
   const [v, setV] = useState<Record<string, unknown>>({})
   useEffect(() => { if (q.data) setV(q.data) }, [q.data])
   const m = useMutation({
-    mutationFn: () => api.put('/settings', Object.fromEntries(RULES.map((r) => [r.key, r.type === 'bool' ? !!v[r.key] : Number(v[r.key])]))),
+    mutationFn: () => api.put('/settings', {
+      ...Object.fromEntries(RULES.map((r) => [r.key, r.type === 'bool' ? !!v[r.key] : Number(v[r.key])])),
+      companies: String(v.companies_text ?? (v.companies as string[] | undefined)?.join(', ') ?? '').split(',').map((c) => c.trim().toUpperCase()).filter(Boolean),
+    }),
     onSuccess: (d) => { qc.setQueryData(['settings'], d) },
   })
   if (q.isLoading) return <Loading />
@@ -58,6 +62,9 @@ function Rules() {
           <Field key={r.key} label={r.label} hint={r.hint}><input className="input" type="number" min={0} value={String(v[r.key] ?? '')} onChange={(e) => setV({ ...v, [r.key]: e.target.value })} /></Field>
         ))}
       </div>
+      <Field className="mt-4" label="Sociétés cochées sur le bon" hint="Séparées par des virgules — « AUTRES » est toujours proposé en plus">
+        <input className="input uppercase" value={String(v.companies_text ?? (v.companies as string[] | undefined)?.join(', ') ?? '')} onChange={(e) => setV({ ...v, companies_text: e.target.value })} />
+      </Field>
       <div className="mt-4 flex items-center gap-3">
         <Button icon={Save} loading={m.isPending} onClick={() => m.mutate()}>Enregistrer</Button>
         {m.isSuccess && <span className="flex items-center gap-1 text-sm font-medium text-emerald-700"><CheckCircle2 size={16} />Enregistré</span>}

@@ -47,6 +47,7 @@ class FuelRefuel extends Model
     public function anomalies()     { return $this->hasMany(FuelAnomaly::class); }
     public function corrections()   { return $this->hasMany(FuelCorrectionRequest::class); }
     public function corrects()      { return $this->belongsTo(self::class, 'corrects_refuel_id'); }
+    public function transferTank()  { return $this->belongsTo(FuelTank::class, 'transfer_to_tank_id'); }
     public function auditLogs()     { return $this->morphMany(FuelAuditLog::class, 'auditable'); }
 
     public function scopeValid($q) { return $q->where('status', 'valide'); }

@@ -55,10 +55,13 @@ Ports 5173/8000 may already be used by another local project; pass `--port` / `A
 - **Driver resolution.** `AssignmentResolver`: shift from `work_shifts` (site-specific overrides global; end ≤ start means it crosses midnight and belongs to the previous work day), then `driver_assignments` for the matching `team_slot` (replacement > most recent start; same-level conflict = ambiguous → selection required).
 - **Authorization** is server-side only, in `App\Services\Fuel\FuelAccess` (roles `admin`, `responsable_site` scoped by `site_user`, `pompiste` scoped by `fuel_tank_user`). Every controller calls `requireModule`/`tankFor`/`scopeRefuels`.
 - **Excel.** `TankReportExporter` reproduces `mobile 1.xlsx` (rows 5–6 headers, row 7 opening balance, one row per stock movement, `M = M(prev) + B − I`) plus `Synthèse` and `Anomalies` sheets. Monthly period runs from `report_month_start_day` (default 27) of the previous month.
+- **Transfers.** Refuelling a vehicle that carries an active tank (`fuel_tanks.vehicle_id`, e.g. tank truck 85751A55) from another tank is a `transfert` when qty ≥ `transfer_min_litres` (default 500, overridable via `purpose`): `sortie` on the source + `transfert_entree` on the destination, both reversed on cancel/correct.
+- **Proofs.** Uploads get a 360 px JPEG thumbnail (`Thumbnailer`, `?thumb=1`). `TankLedger` (GET `/tanks/{id}/ledger`) returns the tank sheet in the field-file layout with each row's attachments; the Excel sheet has a `JUSTIFICATIFS` column (col N) linking to `FRONTEND_URL/bons/{id}`.
 - **QR codes** contain only `FUEL_QR_BASE_URL/<random 40-char token>`; `vehicle_qr_codes` can be revoked/regenerated.
 - Time zone is `Africa/Casablanca` (`APP_TIMEZONE`); models use `Concerns\LocalDates` so JSON dates carry the local offset.
 
 ## Data notes
 - Vehicles come from `fuel:import-materiel` (keyed by immatriculation; code parc is not unique). The "DEPLACEMENT" sheet is reported, not applied.
+- Paper vouchers (`exemples/bon 1.jpeg`, `bon 2.jpeg`) carry: n°, date/heure, company box (TRANSWIN / LAHLAL / LEL / AUTRES → `fuel_refuels.company`), séries, matricule, compteur, litres, conducteur, CIN if « autres », pompiste, site. Field Excel templates are in `exemples/`.
 - SINOTRUK trucks use hour counters (field vouchers D222 "3808 H", D265 "834 H").
 - Tank capacities, initial stocks and driver assignments must come from real data — do not invent them.

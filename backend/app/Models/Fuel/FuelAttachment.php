@@ -11,7 +11,11 @@ class FuelAttachment extends Model
 
     protected $guarded = ['id'];
 
-    protected $hidden = ['disk', 'path', 'attachable_type'];
+    protected $hidden = ['disk', 'path', 'thumb_path', 'attachable_type'];
+
+    protected $appends = ['has_thumb'];
+
+    public function getHasThumbAttribute(): bool { return $this->thumb_path !== null; }
 
     public function attachable() { return $this->morphTo(); }
     public function uploader()   { return $this->belongsTo(User::class, 'uploaded_by'); }

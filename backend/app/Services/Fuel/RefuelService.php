@@ -139,6 +139,35 @@ class RefuelService
             $warnings[] = Warning::alert('bon_papier_deja_utilise', "Le bon papier n° {$paper} est déjà enregistré.");
         }
 
+        // Camion-citerne ravitaillé : transfert vers sa citerne, ou plein de son propre moteur
+        $destTank = FuelTank::where('vehicle_id', $vehicle->id)->where('is_active', true)->where('id', '!=', $tank->id)->first();
+        $purpose = 'consommation';
+        if ($destTank) {
+            $min = Num::fmt((string) FuelSetting::get('transfer_min_litres', 500));
+            $purpose = $in['purpose'] ?? (Num::cmp($qty, $min) >= 0 ? 'transfert' : 'consommation');
+            if (!in_array($purpose, ['consommation', 'transfert'], true)) $purpose = 'consommation';
+            if ($purpose === 'transfert') {
+                $after = Num::add((string) $destTank->current_stock_l, $qty);
+                $warnings[] = Warning::info('transfert_citerne', "Transfert vers la citerne {$destTank->code} : son stock passera à {$after} L.");
+                if (Num::cmp($after, (string) $destTank->capacity_l) > 0) {
+                    $warnings[] = Warning::alert('depasse_capacite_citerne',
+                        "Après transfert, la citerne {$destTank->code} contiendrait {$after} L pour une capacité de {$destTank->capacity_l} L.");
+                }
+            }
+        } elseif (($in['purpose'] ?? null) === 'transfert') {
+            $warnings[] = Warning::block('transfert_impossible', "{$vehicle->code_parc} n'est rattaché à aucune citerne : transfert impossible.");
+        }
+
+        // Société (case cochée sur le bon) et conducteur externe
+        $company = isset($in['company']) && trim((string) $in['company']) !== '' ? mb_strtoupper(trim((string) $in['company'])) : ($vehicle->owner_company ?: null);
+        $knownCompanies = array_map('mb_strtoupper', (array) FuelSetting::get('companies', ['TRANSWIN', 'LAHLAL', 'LEL']));
+        $isExternal = $company !== null && !in_array($company, $knownCompanies, true);
+        $extName = trim((string) ($in['external_driver_name'] ?? ''));
+        $extCin = mb_strtoupper(preg_replace('/\s+/', '', (string) ($in['external_driver_cin'] ?? '')));
+        if ($isExternal && $extCin === '') {
+            $warnings[] = Warning::alert('cin_absent', 'Véhicule « autres » : le CIN du conducteur devrait être renseigné (comme sur le bon papier).');
+        }
+
         // Affectation
         $res = $this->resolver->resolve($vehicle, $tank->site_id, $at);
         $warnings = array_merge($warnings, $res['warnings']);
@@ -151,7 +180,8 @@ class RefuelService
         }
 
         return compact('tank', 'dispenser', 'vehicle', 'start', 'end', 'qty', 'declared', 'expected',
-            'counter', 'prevCounter', 'unit', 'res', 'driver', 'assignment', 'warnings', 'at', 'paper', 'available');
+            'counter', 'prevCounter', 'unit', 'res', 'driver', 'assignment', 'warnings', 'at', 'paper', 'available',
+            'destTank', 'purpose', 'company', 'isExternal', 'extName', 'extCin');
     }
 
     /** Compteur indiqué, ou le compteur actif unique de la citerne. */
@@ -230,6 +260,14 @@ class RefuelService
             'counter_unit' => $e['unit'],
             'previous_counter_value' => $e['prevCounter'],
             'warnings' => $e['warnings'],
+            'company' => $e['company'],
+            'companies' => (array) FuelSetting::get('companies', ['TRANSWIN', 'LAHLAL', 'LEL']),
+            'transfer' => $e['destTank'] ? [
+                'tank' => $e['destTank']->only(['id', 'code', 'name', 'capacity_l']),
+                'tank_stock_l' => $this->access->canSeeStock($user, $e['tank']) ? Num::fmt((string) $e['destTank']->current_stock_l) : null,
+                'purpose' => $e['purpose'],
+                'min_litres' => Num::fmt((string) FuelSetting::get('transfer_min_litres', 500)),
+            ] : null,
             'can_submit' => !collect($e['warnings'])->contains('level', 'bloquant'),
         ];
     }
@@ -269,6 +307,12 @@ class RefuelService
                 $refuel->forceFill(['stock_after_l' => (string) $tank->current_stock_l])->save();
 
                 FuelDispenser::whereKey($dispenser->id)->update(['current_index' => $e['end']]);
+
+                if ($e['purpose'] === 'transfert' && $e['destTank']) {
+                    $dest = $this->stock->lockTank($e['destTank']->id);
+                    $this->stock->apply($dest, $e['qty'], 'transfert_entree', $refuel, $user, $at,
+                        "Transfert depuis {$tank->code} — bon {$refuel->voucher_number}");
+                }
 
                 $this->attachFiles($user, $refuel, $in['attachment_ids'] ?? []);
                 $this->recordAnomalies($refuel, $e['warnings'], $tank, $e['vehicle']);
@@ -314,6 +358,11 @@ class RefuelService
             'voucher_seq' => $seq,
             'voucher_number' => $tank->code . '-' . str_pad((string) $seq, 6, '0', STR_PAD_LEFT),
             'paper_voucher_number' => $e['paper'] !== '' ? $e['paper'] : null,
+            'company' => $e['company'],
+            'external_driver_name' => $e['extName'] !== '' ? $e['extName'] : null,
+            'external_driver_cin' => $e['extCin'] !== '' ? $e['extCin'] : null,
+            'purpose' => $e['purpose'],
+            'transfer_to_tank_id' => $e['purpose'] === 'transfert' ? $e['destTank']?->id : null,
             'fuel_tank_id' => $tank->id,
             'fuel_dispenser_id' => $e['dispenser']->id,
             'vehicle_id' => $vehicle->id,
@@ -344,6 +393,7 @@ class RefuelService
                 'driver' => $driver?->only(['id', 'name', 'matricule']),
                 'driver_reason' => $in['driver_reason'] ?? null,
                 'identified_by' => $in['identified_by'] ?? 'manuel',
+                'transfer_to' => $e['purpose'] === 'transfert' ? $e['destTank']?->only(['id', 'code']) : null,
                 'pump_attendant' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email],
                 'warnings' => $e['warnings'],
             ],
@@ -420,6 +470,11 @@ class RefuelService
             $old = $refuel->only(['status']);
             $this->stock->apply($tank, Num::fmt((string) $refuel->quantity_l), 'annulation_sortie', $refuel, $approver,
                 $this->now(), "Annulation du bon {$refuel->voucher_number} : {$reason}", true);
+            if ($refuel->transfer_to_tank_id) {
+                $dest = $this->stock->lockTank($refuel->transfer_to_tank_id);
+                $this->stock->apply($dest, Num::neg(Num::fmt((string) $refuel->quantity_l)), 'annulation_entree', $refuel, $approver,
+                    $this->now(), "Annulation du transfert {$refuel->voucher_number} : {$reason}", true);
+            }
 
             $refuel->forceFill([
                 'status' => 'annule', 'cancelled_at' => $this->now(), 'cancelled_by' => $approver->id, 'cancel_reason' => $reason,
@@ -504,6 +559,11 @@ class RefuelService
             $this->stock->apply($tank, Num::neg($qty), 'sortie', $new, $approver, $original->refueled_at->toImmutable(),
                 "Bon {$new->voucher_number} (correction de {$original->voucher_number})");
             $new->forceFill(['stock_after_l' => (string) $tank->current_stock_l])->save();
+            if ($new->transfer_to_tank_id) {
+                $dest = $this->stock->lockTank($new->transfer_to_tank_id);
+                $this->stock->apply($dest, $qty, 'transfert_entree', $new, $approver, $original->refueled_at->toImmutable(),
+                    "Transfert depuis {$tank->code} — bon {$new->voucher_number} (correction)");
+            }
 
             // Les justificatifs restent rattachés à l'original ET sont visibles depuis le nouveau
             foreach ($original->attachments as $a) {

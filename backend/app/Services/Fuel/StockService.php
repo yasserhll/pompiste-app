@@ -81,7 +81,7 @@ class StockService
         $t = fn (string $k) => Num::fmt((string) ($rows[$k] ?? '0'));
 
         $initial = $t('stock_initial');
-        $entries = Num::add($t('entree'), $t('annulation_entree'));     // annulation d'entrée : négatif
+        $entries = Num::add(Num::add($t('entree'), $t('transfert_entree')), $t('annulation_entree')); // annulation d'entrée : négatif
         $exits = Num::neg(Num::add($t('sortie'), $t('annulation_sortie'))); // sorties nettes, positif
         $adjust = $t('ajustement');
 

@@ -1,8 +1,9 @@
-import { History, Paperclip, ShieldAlert } from 'lucide-react'
+import { History, ShieldAlert } from 'lucide-react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Filters, type FilterValues } from '../components/Filters'
+import { ProofThumbs } from '../components/ProofThumbs'
 import { Badge, Card, Empty, ErrorBox, Loading, PageHeader, Pagination } from '../components/ui'
 import { api, type Paginated } from '../lib/api'
 import { counter, dateTime, daysAgoISO, litres, todayISO } from '../lib/format'
@@ -39,8 +40,10 @@ export default function RefuelsPage() {
               {q.data.data.map((r) => (
                 <li key={r.id}>
                   <Link to={`/bons/${r.id}`} className="flex items-center justify-between gap-3 px-4 py-3">
-                    <div className="min-w-0">
+                    <span onClick={(e) => e.preventDefault()}><ProofThumbs items={r.attachments ?? []} size={48} max={1} /></span>
+                    <div className="min-w-0 flex-1">
                       <p className="font-semibold">{r.vehicle_code} <span className="text-xs font-normal text-ink-500">{r.voucher_number}</span></p>
+                      {r.paper_voucher_number && <p className="text-xs text-ink-500">Bon papier {r.paper_voucher_number}{r.company ? ` · ${r.company}` : ''}</p>}
                       <p className="truncate text-xs text-ink-500">{dateTime(r.refueled_at)} · {r.driver_name ?? 'Sans conducteur'}</p>
                     </div>
                     <div className="text-right">
@@ -55,7 +58,7 @@ export default function RefuelsPage() {
             <div className="hidden overflow-x-auto md:block">
               <table className="table-base">
                 <thead><tr><th>N° bon</th><th>Date</th><th>Véhicule</th><th>Conducteur</th><th>Pompiste</th><th>Citerne</th>
-                  <th className="text-right">Séries</th><th className="text-right">Qté</th><th className="text-right">Compteur</th><th>Photos</th><th>Statut</th></tr></thead>
+                  <th className="text-right">Séries</th><th className="text-right">Qté</th><th className="text-right">Compteur</th><th>Justificatifs</th><th>Statut</th></tr></thead>
                 <tbody>
                   {q.data.data.map((r) => (
                     <tr key={r.id} className="cursor-pointer" onClick={() => navigate(`/bons/${r.id}`)}>
@@ -64,11 +67,11 @@ export default function RefuelsPage() {
                       <td><span className="font-semibold">{r.vehicle_code}</span><span className="block text-xs text-ink-500">{r.vehicle_immatriculation}</span></td>
                       <td>{r.driver_name ?? '—'}<span className="block text-xs text-ink-500">{r.shift_name}</span></td>
                       <td>{r.pump_attendant_name}</td>
-                      <td>{r.tank?.code}</td>
+                      <td>{r.tank?.code}{r.transfer_tank && <span className="block text-xs text-sky-700">→ {r.transfer_tank.code}</span>}</td>
                       <td className="text-right text-xs tabular-nums">{Number(r.index_start).toLocaleString('fr-FR')}<br />{Number(r.index_end).toLocaleString('fr-FR')}</td>
                       <td className="text-right font-bold tabular-nums text-ink-900">{litres(r.quantity_l)}</td>
                       <td className="text-right tabular-nums">{counter(r.counter_value, r.counter_unit)}</td>
-                      <td><span className="inline-flex items-center gap-1 text-ink-500"><Paperclip size={14} />{r.attachments?.length ?? 0}</span></td>
+                      <td onClick={(e) => e.stopPropagation()}><ProofThumbs items={r.attachments ?? []} size={36} /></td>
                       <td>{r.status === 'annule' ? <Badge color="red">Annulé</Badge> : r.has_anomaly ? <Badge color="amber">Anomalie</Badge> : <Badge color="green">Validé</Badge>}</td>
                     </tr>
                   ))}

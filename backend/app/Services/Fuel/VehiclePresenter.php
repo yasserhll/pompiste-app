@@ -15,6 +15,7 @@ final class VehiclePresenter
             'immatriculation' => $v->immatriculation,
             'chassis' => $v->chassis,
             'type_label' => $v->type_label,
+            'owner_company' => $v->owner_company,
             'category' => $v->category,
             'counter_unit' => $v->counter_unit,
             'tank_capacity_l' => $v->tank_capacity_l,

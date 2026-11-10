@@ -11,6 +11,8 @@ class SettingsController extends FuelController
 {
     public const RULES = [
         'report_month_start_day' => 'integer|min:1|max:28',
+        'transfer_min_litres' => 'numeric|min:0|max:100000',
+        'companies' => 'array|max:20',
         'low_stock_threshold_l' => 'numeric|min:0',
         'declared_quantity_tolerance_l' => 'numeric|min:0|max:100',
         'max_refuel_l' => 'numeric|min:1|max:10000',

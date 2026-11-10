@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import {
-  ArrowLeft, ArrowRight, Camera, CheckCircle2, ClipboardCheck, FileDown, FileText, Gauge, Info, PenLine, ScanLine, Search,
+  ArrowLeft, ArrowRight, ArrowRightLeft, Building2, Camera, Fuel, CheckCircle2, ClipboardCheck, FileDown, FileText, Gauge, Info, PenLine, ScanLine, Search,
   ShieldCheck, Truck, UserRound, UserRoundCog,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -26,10 +26,15 @@ type Form = {
   remark: string
   driver_id: string          // '' = proposition automatique
   driver_reason: string
+  company: string            // case cochée sur le bon : TRANSWIN, LAHLAL, LEL… ou nom (AUTRES)
+  external_driver_name: string
+  external_driver_cin: string
+  purpose: '' | 'consommation' | 'transfert' // '' = selon la quantité
 }
 type Draft = { client_uuid: string; tankId: number; step: Step; scan: ScanResult; form: Form; photos: PhotoItem[]; confirmed: string[]; savedAt: string }
 
-const EMPTY: Form = { index_start: '', index_end: '', declared_quantity_l: '', counter_value: '', paper_voucher_number: '', remark: '', driver_id: '', driver_reason: '' }
+const EMPTY: Form = { index_start: '', index_end: '', declared_quantity_l: '', counter_value: '', paper_voucher_number: '', remark: '', driver_id: '', driver_reason: '',
+  company: '', external_driver_name: '', external_driver_cin: '', purpose: '' }
 
 export default function RefuelPage() {
   const { user, tankId } = useAuth()
@@ -78,7 +83,7 @@ export default function RefuelPage() {
     try {
       const res = await api.post<ScanResult>('/scan', { fuel_tank_id: tankId, ...by })
       setScan(res)
-      setForm({ ...EMPTY, index_start: Number(res.dispenser.expected_index_start) > 0 ? String(Number(res.dispenser.expected_index_start)) : '' })
+      setForm({ ...EMPTY, company: res.company ?? '', index_start: Number(res.dispenser.expected_index_start) > 0 ? String(Number(res.dispenser.expected_index_start)) : '' })
       setConfirmed([]); setPhotos([]); setPreview(null); setClientUuid(uuid())
       setStep('saisie')
     } catch (e) {
@@ -114,6 +119,10 @@ export default function RefuelPage() {
     remark: form.remark.trim() || null,
     driver_id: form.driver_id ? Number(form.driver_id) : (scan!.driver?.id ?? null),
     driver_reason: form.driver_reason.trim() || null,
+    company: form.company.trim() || null,
+    external_driver_name: form.external_driver_name.trim() || null,
+    external_driver_cin: form.external_driver_cin.trim() || null,
+    purpose: form.purpose || null,
     attachment_ids: photos.filter((p) => p.status === 'ok' && p.id).map((p) => p.id),
   }), [scan, form, photos])
 
@@ -276,8 +285,21 @@ export default function RefuelPage() {
             </Field>
           </Card>
 
-          <Card title="Bon papier et remarque" icon={PenLine}>
-            <div className="grid gap-3 sm:grid-cols-2">
+          {(preview?.transfer ?? scan.transfer) && (
+            <TransferChoice t={(preview?.transfer ?? scan.transfer)!} qty={qty.value} value={form.purpose} onChange={(v) => setForm((f) => ({ ...f, purpose: v }))} />
+          )}
+
+          <Card title="Bon papier" subtitle="Reprendre les informations du bon rempli" icon={PenLine}>
+            <p className="label">Société</p>
+            <CompanyChoice companies={scan.companies ?? ['TRANSWIN', 'LAHLAL', 'LEL']} value={form.company}
+              onChange={(c) => setForm((f) => ({ ...f, company: c }))} />
+            {form.company && !(scan.companies ?? []).map((c) => c.toUpperCase()).includes(form.company.toUpperCase()) && (
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <Field label="Nom du conducteur (autres)"><input className="input" value={form.external_driver_name} onChange={set('external_driver_name')} /></Field>
+                <Field label="CIN du conducteur"><input className="input uppercase" value={form.external_driver_cin} onChange={set('external_driver_cin')} placeholder="AB123456" /></Field>
+              </div>
+            )}
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <Field label="N° du bon papier (facultatif)"><input className="input" inputMode="numeric" value={form.paper_voucher_number} onChange={set('paper_voucher_number')} placeholder="0075952" /></Field>
               <Field label="Remarque (facultatif)"><input className="input" value={form.remark} onChange={set('remark')} maxLength={500} /></Field>
             </div>
@@ -318,6 +340,8 @@ export default function RefuelPage() {
               <dt className="text-ink-500">Quantité</dt><dd className="text-lg font-bold">{litres(qty.value)}</dd>
               <dt className="text-ink-500">Compteur</dt><dd>{form.counter_value ? `${form.counter_value} ${v.counter_unit === 'h' ? 'H' : 'km'}` : '—'}</dd>
               {form.paper_voucher_number && <><dt className="text-ink-500">Bon papier</dt><dd>{form.paper_voucher_number}</dd></>}
+              {form.company && <><dt className="text-ink-500">Société</dt><dd>{form.company}{form.external_driver_cin && ` · CIN ${form.external_driver_cin}`}</dd></>}
+              {(preview?.transfer?.purpose === 'transfert') && <><dt className="text-ink-500">Transfert</dt><dd className="font-semibold text-sky-700">Remis à la citerne {preview.transfer.tank.code}</dd></>}
               <dt className="text-ink-500">Photos</dt><dd>{photos.filter((p) => p.status === 'ok').length} jointe(s)</dd>
             </dl>
           </Card>
@@ -495,5 +519,57 @@ function Steps({ step }: { step: number }) {
         </li>
       ))}
     </ol>
+  )
+}
+
+/** Cases du bon papier : TRANSWIN / LAHLAL / LEL / AUTRES (nom libre). */
+function CompanyChoice({ companies, value, onChange }: { companies: string[]; value: string; onChange: (c: string) => void }) {
+  const known = companies.map((c) => c.toUpperCase())
+  const isOther = value !== '' && !known.includes(value.toUpperCase())
+  const [other, setOther] = useState(isOther)
+  return (
+    <div className="space-y-2">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {companies.map((c) => {
+          const on = value.toUpperCase() === c.toUpperCase() && !other
+          return (
+            <button key={c} type="button" onClick={() => { setOther(false); onChange(c) }}
+              className={`flex h-11 items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition ${on ? 'border-brand-500 bg-brand-50 text-brand-700 ring-4 ring-brand-500/10' : 'border-ink-200 bg-white text-ink-700 hover:border-ink-300'}`}>
+              <Building2 size={15} />{c}
+            </button>
+          )
+        })}
+        <button type="button" onClick={() => { setOther(true); onChange(isOther ? value : '') }}
+          className={`flex h-11 items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition ${other ? 'border-brand-500 bg-brand-50 text-brand-700 ring-4 ring-brand-500/10' : 'border-ink-200 bg-white text-ink-700 hover:border-ink-300'}`}>
+          AUTRES
+        </button>
+      </div>
+      {other && <input className="input" autoFocus placeholder="Nom de la société" value={isOther ? value : ''} onChange={(e) => onChange(e.target.value)} />}
+    </div>
+  )
+}
+
+/** Camion-citerne : transfert vers sa citerne (« remis à la citerne ») ou plein de son propre moteur. */
+function TransferChoice({ t, qty, value, onChange }: {
+  t: NonNullable<ScanResult['transfer']>; qty: string | null; value: Form['purpose']; onChange: (v: Form['purpose']) => void
+}) {
+  const auto = qty && Number(qty) >= Number(t.min_litres) ? 'transfert' : 'consommation'
+  const current = value || auto
+  const opts = [
+    { v: 'transfert' as const, icon: ArrowRightLeft, title: `Remis à la citerne ${t.tank.code}`, text: `Le gasoil entre dans la citerne${t.tank_stock_l ? ` (stock actuel ${Number(t.tank_stock_l).toLocaleString('fr-FR')} L)` : ''}.` },
+    { v: 'consommation' as const, icon: Fuel, title: 'Plein du moteur du camion', text: 'Consommation du véhicule lui-même.' },
+  ]
+  return (
+    <Card title="Camion-citerne" subtitle={`Au-delà de ${Number(t.min_litres).toLocaleString('fr-FR')} L, c'est un transfert par défaut`} icon={ArrowRightLeft}>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {opts.map((o) => (
+          <button key={o.v} type="button" onClick={() => onChange(o.v)}
+            className={`flex items-start gap-3 rounded-xl border p-3.5 text-left transition ${current === o.v ? 'border-brand-500 bg-brand-50 ring-4 ring-brand-500/10' : 'border-ink-200 bg-white hover:border-ink-300'}`}>
+            <o.icon size={20} className={current === o.v ? 'text-brand-600' : 'text-ink-400'} />
+            <span><span className="block text-sm font-semibold">{o.title}</span><span className="text-xs text-ink-500">{o.text}</span></span>
+          </button>
+        ))}
+      </div>
+    </Card>
   )
 }

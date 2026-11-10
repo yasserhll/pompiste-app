@@ -1,12 +1,13 @@
-import { AlertTriangle, Archive, ArrowDownToLine, ArrowUpFromLine, Container, EyeOff, Gauge, ListOrdered, Plus, Power, RotateCcw, Scale, Settings2 } from 'lucide-react'
+import { AlertTriangle, Archive, ArrowDownToLine, ArrowUpFromLine, Container, EyeOff, Gauge, Plus, Power, RotateCcw, Scale, Settings2 } from 'lucide-react'
 import { TankGauge } from '../components/charts'
+import { TankSheet } from '../components/TankSheet'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { Alert, Badge, Button, Card, Empty, ErrorBox, Field, IconChip, Loading, Modal, PageHeader, Pagination, Stat } from '../components/ui'
+import { Alert, Badge, Button, Card, Empty, ErrorBox, Field, IconChip, Loading, Modal, PageHeader, Stat } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
-import { api, type Paginated } from '../lib/api'
-import { dateTime, litres, num } from '../lib/format'
+import { api } from '../lib/api'
+import { litres, num } from '../lib/format'
 import type { Site, Tank } from '../lib/types'
 
 export default function TanksPage() {
@@ -85,19 +86,11 @@ function TankForm({ onClose }: { onClose: () => void }) {
   )
 }
 
-type Movement = { id: number; type: string; quantity_l: string; balance_after_l: string; occurred_at: string; note: string | null }
-const MOVE_LABEL: Record<string, string> = {
-  stock_initial: 'Stock initial', entree: 'Entrée', sortie: 'Sortie', ajustement: 'Ajustement',
-  annulation_sortie: 'Annulation sortie', annulation_entree: 'Annulation entrée',
-}
-
 export function TankDetailPage() {
   const { id } = useParams()
   const { user } = useAuth()
   const qc = useQueryClient()
   const q = useQuery({ queryKey: ['tank', id], queryFn: () => api.get<Tank & { dispensers_detail: any[]; users: { id: number; name: string; role: string }[] }>(`/tanks/${id}`) })
-  const [page, setPage] = useState(1)
-  const moves = useQuery({ queryKey: ['tank-moves', id, page], queryFn: () => api.get<Paginated<Movement>>(`/tanks/${id}/movements`, { page }), enabled: !!q.data?.stock_visible })
   const [reset, setReset] = useState<any | null>(null)
   const [threshold, setThreshold] = useState<string | null>(null)
   const save = useMutation({
@@ -152,22 +145,7 @@ export function TankDetailPage() {
         </Card>
       </div>
 
-      {t.stock_visible && (
-        <Card title="Journal des mouvements de stock" subtitle="Append-only : chaque litre entré ou sorti" icon={ListOrdered} className="mt-6" padded={false}>
-          {moves.isLoading ? <Loading /> : !moves.data?.data.length ? <Empty>Aucun mouvement.</Empty> : (
-            <>
-              <div className="overflow-x-auto"><table className="table-base">
-                <thead><tr><th>Date</th><th>Type</th><th className="text-right">Quantité</th><th className="text-right">Solde après</th><th>Détail</th></tr></thead>
-                <tbody>{moves.data.data.map((m) => (
-                  <tr key={m.id}><td>{dateTime(m.occurred_at)}</td><td>{MOVE_LABEL[m.type] ?? m.type}</td>
-                    <td className={`text-right font-semibold tabular-nums ${Number(m.quantity_l) < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>{Number(m.quantity_l) > 0 ? '+' : ''}{litres(m.quantity_l)}</td>
-                    <td className="text-right tabular-nums">{litres(m.balance_after_l)}</td><td className="text-ink-600">{m.note}</td></tr>))}</tbody>
-              </table></div>
-              <Pagination page={moves.data.current_page} last={moves.data.last_page} total={moves.data.total} onChange={setPage} />
-            </>
-          )}
-        </Card>
-      )}
+      {t.stock_visible && <div className="mt-6"><TankSheet tankId={t.id} tankCode={t.code} /></div>}
       {reset && <ResetModal dispenser={reset} onClose={() => setReset(null)} />}
     </>
   )

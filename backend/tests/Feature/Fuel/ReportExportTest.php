@@ -24,7 +24,7 @@ class ReportExportTest extends FuelTestCase
         $this->assertSame('2026-11-26', $p->to->format('Y-m-d'));
 
         $book = app(TankReportExporter::class)->tanksWorkbook(FuelTank::where('id', $this->tank->id)->with('site')->get(), $p, 'Test');
-        $this->assertSame(['Synthèse', '85751A55', 'Anomalies'], $book->getSheetNames());
+        $this->assertSame(['Synthèse', '85751A55', 'Consommation', 'Anomalies'], $book->getSheetNames());
         $ws = $book->getSheetByName('85751A55');
 
         // En-têtes identiques au modèle

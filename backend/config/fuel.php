@@ -13,6 +13,11 @@ return [
     'attachment_max_kb' => 8192,
 
     'defaults' => [
+        // Sociétés cochées sur le bon papier (TRANSWIN / LAHLAL / LEL / AUTRES)
+        'companies' => ['TRANSWIN', 'LAHLAL', 'LEL'],
+        // Remplissage d'un camion-citerne : au-delà de ce volume, c'est un transfert de citerne à citerne
+        // (en dessous, le plein de son propre moteur) — même règle que les fichiers LOUTA
+        'transfer_min_litres' => 500,
         // Rapports mensuels : 27 → 26 (mettre 1 pour le mois calendaire)
         'report_month_start_day' => 27,
         // Seuil de stock faible par défaut (si la citerne n'en définit pas)

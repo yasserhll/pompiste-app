@@ -1,10 +1,11 @@
 import { Ban, Camera, CheckCircle2, FileDown, Fuel, History, ImageOff, PenLine, Receipt, ShieldAlert } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { ProofThumbs } from '../components/ProofThumbs'
 import { Alert, Badge, Button, Card, Empty, ErrorBox, Field, Loading, Modal, PageHeader } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
-import { api, blobUrl, download } from '../lib/api'
+import { api, download } from '../lib/api'
 import { counter, dateTime, litres } from '../lib/format'
 import type { Anomaly, Attachment, Refuel } from '../lib/types'
 
@@ -63,6 +64,9 @@ export default function RefuelDetailPage() {
             <Item k="Compteur" v={<>{counter(r.counter_value, r.counter_unit)}{r.previous_counter_value && <span className="block text-xs text-ink-500">précédent {counter(r.previous_counter_value, r.counter_unit)}</span>}</>} />
             <Item k="Stock citerne" v={`${litres(r.stock_before_l)} → ${litres(r.stock_after_l)}`} />
             <Item k="Bon papier" v={r.paper_voucher_number ?? '—'} />
+            <Item k="Société" v={r.company ?? '—'} />
+            {(r.external_driver_name || r.external_driver_cin) && <Item k="Conducteur externe" v={`${r.external_driver_name ?? ''}${r.external_driver_cin ? ` — CIN ${r.external_driver_cin}` : ''}`} />}
+            {r.purpose === 'transfert' && <Item k="Transfert" v={<span className="font-semibold text-sky-700">Remis à la citerne {r.transfer_tank?.code}</span>} />}
             <Item k="Remarque" v={r.remark ?? '—'} />
             <Item k="Statut" v={r.status === 'annule' ? <Badge color="red">Annulé</Badge> : <Badge color="green">Validé</Badge>} />
           </dl>
@@ -79,7 +83,7 @@ export default function RefuelDetailPage() {
         </Card>
 
         <Card title={`Photos / justificatifs (${r.attachments.length})`} icon={Camera} className="lg:col-span-3">
-          {r.attachments.length ? <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">{r.attachments.map((a) => <AttachmentThumb key={a.id} a={a} />)}</div> : <Empty icon={ImageOff}>Aucune photo jointe.</Empty>}
+          {r.attachments.length ? <ProofThumbs items={r.attachments} size={132} max={12} /> : <Empty icon={ImageOff}>Aucune photo jointe.</Empty>}
         </Card>
 
         <Card title="Historique des modifications" icon={History} className="lg:col-span-3" padded={false}>
@@ -106,30 +110,6 @@ export default function RefuelDetailPage() {
 
 function Item({ k, v }: { k: string; v: React.ReactNode }) {
   return <div><dt className="text-xs text-ink-500">{k}</dt><dd className="mt-0.5">{v}</dd></div>
-}
-
-function AttachmentThumb({ a }: { a: Attachment }) {
-  const [url, setUrl] = useState<string | null>(null)
-  const [open, setOpen] = useState(false)
-  const isImg = a.mime.startsWith('image/')
-  useEffect(() => {
-    let u: string | null = null
-    if (isImg) blobUrl(`/attachments/${a.id}`).then((x) => { u = x; setUrl(x) }).catch(() => {})
-    return () => { if (u) URL.revokeObjectURL(u) }
-  }, [a.id, isImg])
-  return (
-    <>
-      <button className="card-hover overflow-hidden rounded-xl border border-ink-200 text-left" onClick={() => (isImg ? setOpen(true) : download(`/attachments/${a.id}`))}>
-        <div className="aspect-[4/3] bg-ink-100">{url ? <img src={url} alt={a.original_name ?? ''} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-xs text-ink-500">{isImg ? '…' : 'PDF'}</div>}</div>
-        <p className="truncate px-2 py-1 text-xs">{a.kind === 'bon_papier' ? 'Bon papier' : a.original_name}</p>
-      </button>
-      {open && url && (
-        <div className="fixed inset-0 z-50 flex animate-fade-up items-center justify-center bg-ink-950/90 p-4 backdrop-blur" onClick={() => setOpen(false)}>
-          <img src={url} alt="" className="max-h-full max-w-full rounded-lg" />
-        </div>
-      )}
-    </>
-  )
 }
 
 function CorrectionModal({ refuel, kind, direct, onClose }: { refuel: Refuel; kind: 'correction' | 'annulation'; direct: boolean; onClose: () => void }) {

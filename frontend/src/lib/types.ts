@@ -26,6 +26,7 @@ export type VehicleCard = {
   category: 'camion' | 'engin' | 'vehicule_leger' | 'citerne' | 'autre'
   counter_unit: 'km' | 'h'
   tank_capacity_l: string | null
+  owner_company?: string | null
   status: 'actif' | 'en_panne' | 'inactif'
   status_note: string | null
   site: Site | null
@@ -55,6 +56,9 @@ export type ScanResult = {
   previous_counter_value: string | null
   warnings: Warning[]
   identified_by: 'qr' | 'manuel'
+  company: string | null
+  companies: string[]
+  transfer: { tank: { id: number; code: string; name: string; capacity_l: string }; tank_stock_l: string | null; purpose: 'consommation' | 'transfert'; min_litres: string } | null
 }
 
 export type Preview = Omit<ScanResult, 'identified_by'> & {
@@ -66,13 +70,19 @@ export type Preview = Omit<ScanResult, 'identified_by'> & {
   can_submit: boolean
 }
 
-export type Attachment = { id: number; kind: string; original_name: string | null; mime: string; size: number; created_at: string }
+export type Attachment = { id: number; kind: string; original_name: string | null; mime: string; size: number; created_at: string; has_thumb?: boolean }
 
 export type Refuel = {
   id: number
   voucher_number: string
   voucher_seq: number
   paper_voucher_number: string | null
+  company: string | null
+  external_driver_name: string | null
+  external_driver_cin: string | null
+  purpose: 'consommation' | 'transfert'
+  transfer_to_tank_id: number | null
+  transfer_tank?: { id: number; code: string; name?: string } | null
   fuel_tank_id: number
   tank?: { id: number; code: string; name?: string; site?: Site }
   vehicle_id: number

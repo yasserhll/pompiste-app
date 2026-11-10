@@ -109,6 +109,7 @@ class ReferenceController extends FuelController
             'immatriculation' => [$req, 'string', 'max:50', Rule::unique('vehicles', 'immatriculation')->ignore($v?->id)],
             'chassis' => 'nullable|string|max:50',
             'type_label' => 'nullable|string|max:100',
+            'owner_company' => 'nullable|string|max:60',
             'category' => 'sometimes|in:camion,engin,vehicule_leger,citerne,autre',
             'counter_unit' => 'sometimes|in:km,h',
             'tank_capacity_l' => 'nullable|numeric|min:1|max:5000',

@@ -11,7 +11,7 @@ class Vehicle extends Model
     use \App\Models\Concerns\LocalDates;
 
     protected $fillable = [
-        'site_id', 'code_parc', 'immatriculation', 'chassis', 'type_label',
+        'site_id', 'code_parc', 'immatriculation', 'chassis', 'type_label', 'owner_company',
         'category', 'counter_unit', 'tank_capacity_l', 'status', 'status_note',
     ];
 
@@ -22,6 +22,7 @@ class Vehicle extends Model
     public function qrCodes()     { return $this->hasMany(VehicleQrCode::class); }
     public function activeQrCode(){ return $this->hasOne(VehicleQrCode::class)->where('is_active', true)->latestOfMany(); }
     public function refuels()     { return $this->hasMany(FuelRefuel::class); }
+    public function fuelTank()    { return $this->hasOne(\App\Models\Fuel\FuelTank::class)->where('is_active', true); }
 
     /** Catégorie et unité de compteur déduites du libellé de type du fichier d'affectation. */
     public static function classify(?string $typeLabel): array

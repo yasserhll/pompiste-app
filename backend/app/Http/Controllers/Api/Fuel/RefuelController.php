@@ -21,7 +21,7 @@ class RefuelController extends FuelController
     public function index(Request $r)
     {
         $this->requireModule($r);
-        $q = FuelRefuel::query()->with(['tank:id,code', 'attachments:id,attachable_id,attachable_type'])
+        $q = FuelRefuel::query()->with(['tank:id,code', 'transferTank:id,code', 'attachments:id,attachable_id,attachable_type,kind,mime,thumb_path'])
             ->withCount('anomalies');
         $this->access->scopeRefuels($q, $r->user());
 
@@ -46,7 +46,7 @@ class RefuelController extends FuelController
     {
         $this->requireModule($r);
         $refuel = $this->visible($r, $id);
-        $refuel->load(['tank.site', 'dispenser', 'attachments', 'anomalies', 'corrections.requester:id,name', 'corrections.reviewer:id,name',
+        $refuel->load(['tank.site', 'dispenser', 'attachments', 'transferTank:id,code,name', 'anomalies', 'corrections.requester:id,name', 'corrections.reviewer:id,name',
             'corrects:id,voucher_number', 'auditLogs.user:id,name']);
         $replacedBy = FuelRefuel::where('corrects_refuel_id', $refuel->id)->first(['id', 'voucher_number']);
         return response()->json(['refuel' => $refuel, 'replaced_by' => $replacedBy]);
@@ -135,6 +135,10 @@ class RefuelController extends FuelController
             'declared_quantity_l' => 'nullable',
             'counter_value' => 'nullable',
             'paper_voucher_number' => 'nullable|string|max:50',
+            'company' => 'nullable|string|max:60',
+            'external_driver_name' => 'nullable|string|max:255',
+            'external_driver_cin' => 'nullable|string|max:30',
+            'purpose' => 'nullable|in:consommation,transfert',
             'remark' => 'nullable|string|max:500',
             'attachment_ids' => 'nullable|array|max:10',
             'attachment_ids.*' => 'integer',
