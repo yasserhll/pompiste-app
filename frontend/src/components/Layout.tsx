@@ -6,6 +6,7 @@ import {
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation, useOutlet } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { InstallButton } from './PwaPrompts'
 import { ROLE_LABEL } from '../lib/format'
 import type { Role } from '../lib/types'
 import { cls } from '../lib/util'
@@ -73,7 +74,7 @@ export function Layout() {
       <div className="pointer-events-none absolute inset-0 bg-grid opacity-60" />
       <div className="pointer-events-none absolute -left-24 -top-24 h-64 w-64 rounded-full bg-brand-600/25 blur-3xl" />
 
-      <div className="relative flex items-center gap-3 px-5 pb-5 pt-6">
+      <div className="relative flex items-center gap-3 px-5 pb-5 pt-[calc(env(safe-area-inset-top)+1.5rem)]">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-fuel-400 to-fuel-600 text-navy-950 shadow-glow-fuel">
           <Droplets size={20} strokeWidth={2.4} />
         </div>
@@ -120,7 +121,8 @@ export function Layout() {
         ))}
       </nav>
 
-      <div className="relative border-t border-white/10 p-4">
+      <div className="relative space-y-3 border-t border-white/10 p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+        <InstallButton variant="dark" />
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-400 to-brand-700 text-sm font-bold text-white ring-2 ring-white/10">{initials(user.name)}</div>
           <div className="min-w-0 flex-1">
@@ -134,7 +136,7 @@ export function Layout() {
   )
 
   return (
-    <div className="min-h-screen lg:pl-[17rem]">
+    <div className="min-h-[100dvh] lg:pl-[17rem]">
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-[17rem] lg:block">{sidebar('desk')}</aside>
 
       <AnimatePresence>
@@ -144,15 +146,15 @@ export function Layout() {
             <motion.aside className="absolute inset-y-0 left-0 w-[17rem] max-w-[85vw] shadow-2xl" initial={{ x: -300 }} animate={{ x: 0 }} exit={{ x: -300 }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}>
               {sidebar('mob')}
-              <button onClick={() => setMenu(false)} className="absolute right-3 top-6 rounded-lg p-1.5 text-ink-400 hover:bg-white/10" aria-label="Fermer le menu"><X size={18} /></button>
+              <button onClick={() => setMenu(false)} className="absolute right-3 top-[calc(env(safe-area-inset-top)+1.5rem)] rounded-lg p-1.5 text-ink-400 hover:bg-white/10" aria-label="Fermer le menu"><X size={18} /></button>
             </motion.aside>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Barre supérieure */}
-      <header className="sticky top-0 z-20 border-b border-ink-200/70 bg-white/80 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-[90rem] items-center gap-3 px-4 sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-20 border-b border-ink-200/70 bg-white/80 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
+        <div className="mx-auto flex h-14 max-w-[90rem] items-center gap-2 px-3 sm:h-16 sm:gap-3 sm:px-6 lg:px-8">
           <button onClick={() => setMenu(true)} className="-ml-1 rounded-lg p-2 text-ink-600 hover:bg-ink-100 lg:hidden" aria-label="Menu"><Menu size={20} /></button>
           <div className="min-w-0 flex-1">
             <p className="truncate text-[15px] font-semibold text-ink-900">{current?.label ?? 'Pompiste'}</p>
@@ -182,7 +184,8 @@ export function Layout() {
         </AnimatePresence>
       </header>
 
-      <main className="mx-auto max-w-[90rem] px-4 pb-28 pt-6 sm:px-6 lg:px-8 lg:pb-12 lg:pt-8">
+      <main className="mx-auto max-w-[90rem] px-3 pb-[calc(env(safe-area-inset-bottom)+7rem)] pt-4 sm:px-6 sm:pt-6 lg:px-8 lg:pb-12 lg:pt-8">
+        <InstallButton variant="banner" />
         <AnimatePresence mode="wait">
           <motion.div key={loc.pathname} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.22, ease: [0.2, 0.7, 0.2, 1] }}>

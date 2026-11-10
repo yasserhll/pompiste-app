@@ -9,7 +9,9 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "dev:https": "vite --mode https",
-    "test": "vitest run"
+    "test": "vitest run",
+    "preview:https": "vite build --mode https && vite preview --mode https",
+    "pwa:icons": "pwa-assets-generator"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.83.0",
@@ -26,6 +28,7 @@
     "@types/node": "^22.10.2",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
+    "@vite-pwa/assets-generator": "^0.2.6",
     "@vitejs/plugin-basic-ssl": "^1.2.0",
     "@vitejs/plugin-react": "^4.3.3",
     "autoprefixer": "^10.4.20",
@@ -38,6 +41,7 @@
     "typescript": "~5.6.2",
     "typescript-eslint": "^8.11.0",
     "vite": "^5.4.10",
+    "vite-plugin-pwa": "^0.21.1",
     "vitest": "^3.2.4"
   }
 }

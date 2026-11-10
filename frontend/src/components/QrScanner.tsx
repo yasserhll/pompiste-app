@@ -57,7 +57,7 @@ export function QrScanner({ onResult }: { onResult: (text: string) => void }) {
 
   return (
     <div className="space-y-4">
-      <div className="relative mx-auto aspect-square w-full max-w-sm overflow-hidden rounded-3xl bg-navy-950 shadow-lift">
+      <div className="relative mx-auto aspect-square w-full max-w-[min(24rem,62dvh)] overflow-hidden rounded-3xl bg-navy-950 shadow-lift">
         <div id="qr-reader" className="h-full w-full [&_video]:h-full [&_video]:w-full" />
         {/* Cadre de visée */}
         <div className="pointer-events-none absolute inset-[15%]">

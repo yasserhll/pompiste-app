@@ -39,7 +39,21 @@ export default function DeliveriesPage() {
       <Card padded={false}>
         {q.isLoading ? <Loading /> : !q.data?.data.length ? <Empty icon={Droplets}>Aucune entrée enregistrée.</Empty> : (
           <>
-            <div className="overflow-x-auto"><table className="table-base">
+            <ul className="divide-y divide-ink-100 md:hidden">
+              {q.data.data.map((d) => (
+                <li key={d.id} className="flex items-start justify-between gap-3 px-4 py-3.5">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-ink-900">{d.tank.code} <span className="font-normal text-ink-500">· {d.supplier}</span></p>
+                    <p className="truncate text-xs text-ink-500">{dateTime(d.delivered_at)} · BL {d.delivery_note_number ?? '—'} · {d.user.name}</p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="font-bold tabular-nums text-emerald-600">+{litres(d.quantity_l)}</p>
+                    {d.status === 'annule' ? <Badge color="red">Annulée</Badge> : user?.role === 'admin' && <button className="text-xs font-semibold text-rose-600" onClick={() => setCancel(d)}>Annuler</button>}
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <div className="hidden overflow-x-auto md:block"><table className="table-base">
               <thead><tr><th>Date</th><th>Citerne</th><th className="text-right">Quantité</th><th>Fournisseur</th><th>N° BL</th><th>Référence</th><th>Saisi par</th><th>Pièces</th><th>Statut</th><th /></tr></thead>
               <tbody>{q.data.data.map((d) => (
                 <tr key={d.id}>

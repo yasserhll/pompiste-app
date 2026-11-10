@@ -48,7 +48,7 @@ export default function DashboardPage() {
     <div className="space-y-6">
       {/* Bandeau */}
       <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}
-        className="relative overflow-hidden rounded-3xl bg-navy-900 px-6 py-7 text-white shadow-lift sm:px-8">
+        className="relative overflow-hidden rounded-3xl bg-navy-900 px-5 py-6 text-white shadow-lift sm:px-8 sm:py-7">
         <div className="pointer-events-none absolute inset-0 bg-grid" />
         <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-brand-600/40 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-28 right-40 h-64 w-64 rounded-full bg-fuel-500/25 blur-3xl" />
@@ -80,7 +80,7 @@ export default function DashboardPage() {
       {!d ? (
         <div className="grid grid-cols-2 gap-4 xl:grid-cols-5">{Array.from({ length: 5 }, (_, i) => <Skeleton key={i} className="h-36 rounded-2xl" />)}</div>
       ) : (
-        <div className="grid grid-cols-2 gap-4 xl:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-5">
           <Stat label="Distribué aujourd'hui" icon={Fuel} iconTone="fuel" value={<CountUp value={Number(d.kpis.today_l)} format={L} />} sub={`${d.kpis.today_count} ravitaillement(s)`} />
           <Stat label="Distribué ce mois" icon={Droplets} value={<CountUp value={Number(d.kpis.month_l)} format={L} />} sub="Mois de rapport en cours" delay={0.05} />
           <Stat label="Distribué sur la période" icon={Activity} iconTone="sky" value={<CountUp value={Number(d.kpis.period_l)} format={L} />} sub={`${d.kpis.period_count.toLocaleString('fr-FR')} bons`} delay={0.1}>
@@ -103,7 +103,7 @@ export default function DashboardPage() {
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {d.tanks.map((t, i) => (
               <motion.div key={t.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + i * 0.06 }}>
-                <Link to={`/citernes/${t.id}`} className="card-hover flex items-center gap-5 rounded-2xl border border-ink-200/70 p-4">
+                <Link to={`/citernes/${t.id}`} className="card-hover flex items-center gap-4 rounded-2xl border border-ink-200/70 p-4 sm:gap-5">
                   <TankGauge pct={t.fill_pct ?? 0} low={t.is_low} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">

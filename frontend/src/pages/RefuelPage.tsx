@@ -155,6 +155,14 @@ export default function RefuelPage() {
     }
   }
 
+  // Validation interrompue par une coupure : renvoi automatique dès le retour du réseau (même client_uuid)
+  useEffect(() => {
+    if (!submitError?.offline || step !== 'recap') return
+    const retry = () => { if (!submitting) submit() }
+    window.addEventListener('online', retry)
+    return () => window.removeEventListener('online', retry)
+  }) // eslint-disable-line react-hooks/exhaustive-deps
+
   if (!user) return null
   if (!user.tanks.length) return <Alert tone="warning" title="Aucune citerne autorisée">Demandez à l'administrateur de vous rattacher à une citerne.</Alert>
 
@@ -248,7 +256,7 @@ export default function RefuelPage() {
                 <input className="input input-lg" inputMode="decimal" autoComplete="off" value={form.index_end} onChange={set('index_end')} placeholder="66 4735" autoFocus />
               </Field>
             </div>
-            <div className={`relative mt-4 flex items-center justify-between overflow-hidden rounded-2xl px-5 py-4 ${qty.error ? 'bg-rose-50 text-rose-800 ring-1 ring-rose-200' : 'bg-navy-900 text-white'}`}>
+            <div className={`relative mt-4 flex flex-wrap items-center justify-between gap-x-3 overflow-hidden rounded-2xl px-4 py-4 sm:px-5 ${qty.error ? 'bg-rose-50 text-rose-800 ring-1 ring-rose-200' : 'bg-navy-900 text-white'}`}>
               {!qty.error && <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-fuel-500/30 blur-2xl" />}
               <span className="relative text-sm font-medium opacity-80">Quantité calculée</span>
               <motion.span key={qty.value ?? qty.error ?? 'vide'} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
@@ -283,7 +291,7 @@ export default function RefuelPage() {
             {warnings.length ? <WarningList warnings={warnings} /> : <p className="flex items-center gap-2 text-sm font-medium text-emerald-700"><CheckCircle2 size={18} />Aucune anomalie détectée.</p>}
           </Card>
 
-          <div className="sticky bottom-16 z-10 lg:bottom-4">
+          <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] z-10 lg:bottom-4">
             <Button variant="brand" size="xl" className="w-full" iconRight={ArrowRight} disabled={!formReady || uploading || blocking.length > 0} onClick={() => setStep('recap')}>
               {uploading ? 'Envoi des photos…' : 'Continuer vers le récapitulatif'}
             </Button>
@@ -299,7 +307,7 @@ export default function RefuelPage() {
               <div className="relative"><p className="text-xs uppercase tracking-wider text-ink-400">Quantité</p><p className="text-3xl font-bold tabular-nums text-fuel-300">{litres(qty.value)}</p></div>
               <div className="relative text-right"><p className="text-xs uppercase tracking-wider text-ink-400">Véhicule</p><p className="text-xl font-bold">{v.code_parc}</p></div>
             </div>
-            <dl className="grid grid-cols-[auto,1fr] gap-x-6 gap-y-2.5 text-sm">
+            <dl className="grid grid-cols-[auto,1fr] gap-x-4 gap-y-2.5 text-sm sm:gap-x-6 [&_dd]:min-w-0 [&_dd]:break-words">
               <dt className="text-ink-500">Véhicule</dt><dd className="font-semibold">{v.code_parc} — {v.immatriculation}</dd>
               <dt className="text-ink-500">Conducteur</dt><dd>{driverName ?? <span className="text-amber-700">Non affecté</span>}{scan.shift && ` · shift ${scan.shift.name}`}</dd>
               <dt className="text-ink-500">Site</dt><dd>{v.site?.name ?? '—'}</dd>
@@ -322,12 +330,12 @@ export default function RefuelPage() {
 
           {submitError && !submitError.requiresConfirmation && (
             submitError.offline
-              ? <Alert tone="warning" title="Réseau indisponible">La saisie est conservée. Appuyer à nouveau sur « Valider » quand le réseau revient : le bon ne sera pas enregistré deux fois.</Alert>
+              ? <Alert tone="warning" title="Réseau indisponible">La saisie est conservée sur le téléphone et sera envoyée automatiquement au retour du réseau (ou appuyer à nouveau sur « Valider »). Le bon ne sera jamais enregistré deux fois.</Alert>
               : <ErrorBox error={submitError} />
           )}
           {submitError?.requiresConfirmation && <Alert tone="warning">De nouveaux contrôles sont apparus au moment de la validation (autre opération sur la citerne). Les vérifier puis valider.</Alert>}
 
-          <div className="sticky bottom-16 z-10 space-y-2 lg:bottom-4">
+          <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] z-10 space-y-2 lg:bottom-4">
             <Button variant="brand" size="xl" className="w-full" icon={CheckCircle2} loading={submitting}
               disabled={submitting || blocking.length > 0 || unconfirmed.length > 0 || uploading} onClick={submit}>
               VALIDER LE RAVITAILLEMENT

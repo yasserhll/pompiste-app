@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { lazy, Suspense, type ReactNode } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { Layout } from './components/Layout'
+import { UpdatePrompt } from './components/PwaPrompts'
 import { Loading } from './components/ui'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import type { Role } from './lib/types'
@@ -65,6 +66,7 @@ export default function App() {
               </Route>
             </Routes>
           </Suspense>
+          <UpdatePrompt />
         </BrowserRouter>
       </AuthProvider>
     </QueryClientProvider>

@@ -28,8 +28,12 @@ cd frontend
 npm run dev            # http://localhost:5173, /api proxied to API_PROXY_TARGET (default http://127.0.0.1:8000)
 npm run dev:https      # HTTPS on the LAN (.env.https) — phones only open the camera over HTTPS
 npm test               # vitest (src/**/*.test.ts); single file: npx vitest run src/lib/num.test.ts
-npm run build          # tsc -b + vite build
+npm run build          # tsc -b + vite build (generates the PWA service worker + manifest)
+npm run preview        # serve the production build on http://localhost:4190 (PWA behaviour: SW, install, offline)
+npm run preview:https  # same over HTTPS on the LAN (self-signed: camera OK after accepting; install needs a trusted cert)
+npm run pwa:icons      # regenerate maskable/Apple icons from pwa-assets/icon-full.svg (others: npx @vite-pwa/assets-generator --preset minimal-2023 public/icon.svg)
 ```
+Don't serve this app on port 4173 in the dev Chrome profile: another local project's service worker is registered on that origin and hijacks it.
 Ports 5173/8000 may already be used by another local project; pass `--port` / `API_PROXY_TARGET` to avoid hitting the wrong backend.
 
 ## Architecture (frontend)
@@ -38,6 +42,8 @@ Ports 5173/8000 may already be used by another local project; pass `--port` / `A
 - `src/lib/num.ts` mirrors `Num::parse` for instant feedback; the raw string is still what is sent.
 - Dates: display the wall-clock digits from the API string (`format.ts`), never convert with `Intl` time zones — browser tz data disagrees on Africa/Casablanca (Chrome 156 gives UTC+0, PHP/MySQL/Windows UTC+1).
 - Role-based route guards in `App.tsx` are cosmetic; the backend enforces access.
+- PWA (`vite-plugin-pwa`, config in `vite.config.ts`): app shell precached, `/api/*` is NetworkOnly (business data is never served from cache), `registerType: 'prompt'` so updates never reload during an entry (`components/PwaPrompts.tsx`). Install flow in `lib/pwa.ts` (beforeinstallprompt on Android/Chrome, manual instructions on iOS).
+- Mobile: layouts use `env(safe-area-inset-*)` and `dvh`; sticky action buttons sit above the bottom nav (`bottom-[calc(env(safe-area-inset-bottom)+5.25rem)]`); lists used by pump attendants have a card layout below `md`.
 
 ## Architecture (backend)
 - **Stock is a ledger.** `fuel_stock_movements` is append-only; `fuel_tanks.current_stock_l` is a cache written only by `App\Services\Fuel\StockService::apply()`, inside a transaction with the tank row locked (`lockTank`). Never update stock or `last_voucher_seq` any other way.

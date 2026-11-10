@@ -5,6 +5,11 @@
 @layer base {
   html { -webkit-tap-highlight-color: transparent; }
   body { @apply bg-ink-50 text-ink-900 antialiased; font-feature-settings: 'cv11', 'ss01'; }
+  /* Application installée : pas de rebond ni de sélection accidentelle sur l'interface */
+  @media (display-mode: standalone) {
+    html, body { overscroll-behavior-y: none; }
+    nav, header, button { -webkit-user-select: none; user-select: none; }
+  }
   input, select, textarea { font-size: 16px; } /* évite le zoom iOS */
   ::selection { @apply bg-brand-100 text-brand-900; }
 }

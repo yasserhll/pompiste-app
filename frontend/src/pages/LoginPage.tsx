@@ -3,6 +3,7 @@ import { BarChart3, Droplets, Lock, Mail, QrCode, ShieldCheck } from 'lucide-rea
 import { useState, type FormEvent } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { Button, ErrorBox } from '../components/ui'
+import { InstallButton } from '../components/PwaPrompts'
 import { useAuth } from '../context/AuthContext'
 
 const FEATURES = [
@@ -31,7 +32,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
+    <div className="grid min-h-[100dvh] lg:grid-cols-[1.1fr_1fr]">
       {/* Panneau de marque */}
       <aside className="relative hidden overflow-hidden bg-navy-900 p-12 text-white lg:flex lg:flex-col lg:justify-between">
         <div className="pointer-events-none absolute inset-0 bg-grid" />
@@ -63,7 +64,7 @@ export default function LoginPage() {
       </aside>
 
       {/* Formulaire */}
-      <main className="flex items-center justify-center bg-white px-6 py-12">
+      <main className="flex items-center justify-center bg-white px-5 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-[calc(env(safe-area-inset-top)+2rem)]">
         <motion.form onSubmit={submit} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }} className="w-full max-w-sm">
           <div className="mb-8 flex items-center gap-3 lg:hidden">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-fuel-400 to-fuel-600 text-navy-950"><Droplets size={22} /></div>
@@ -86,7 +87,8 @@ export default function LoginPage() {
             <ErrorBox error={error} />
             <Button type="submit" variant="brand" size="lg" className="w-full" loading={busy}>Se connecter</Button>
           </div>
-          <p className="mt-8 text-center text-xs text-ink-400">Compte fourni par l'administrateur. Accès limité à vos sites et citernes.</p>
+          <div className="mt-6"><InstallButton /></div>
+          <p className="mt-6 text-center text-xs text-ink-400">Compte fourni par l'administrateur. Accès limité à vos sites et citernes.</p>
         </motion.form>
       </main>
     </div>

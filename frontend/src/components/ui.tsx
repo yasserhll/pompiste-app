@@ -48,7 +48,7 @@ export function Card({ title, subtitle, icon: Icon, actions, children, className
     <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay, ease: [0.2, 0.7, 0.2, 1] }}
       className={cls('card overflow-hidden', className)}>
       {(title || actions) && (
-        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-ink-100 px-5 py-3.5">
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-ink-100 px-4 py-3.5 sm:px-5">
           <div className="flex min-w-0 items-center gap-3">
             {Icon && <IconChip icon={Icon} tone="brand" size="sm" />}
             <div className="min-w-0">
@@ -59,7 +59,7 @@ export function Card({ title, subtitle, icon: Icon, actions, children, className
           {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
         </header>
       )}
-      <div className={padded ? 'p-5' : ''}>{children}</div>
+      <div className={padded ? 'p-4 sm:p-5' : ''}>{children}</div>
     </motion.section>
   )
 }
@@ -155,12 +155,12 @@ export function Stat({ label, value, sub, tone, icon, iconTone = 'brand', delay 
   { label: string; value: ReactNode; sub?: ReactNode; tone?: 'red' | 'amber'; icon?: LucideIcon; iconTone?: Tone; delay?: number; children?: ReactNode }) {
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay, ease: [0.2, 0.7, 0.2, 1] }}
-      className="card card-hover relative overflow-hidden p-5">
+      className="card card-hover relative overflow-hidden p-4 sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <p className="text-[13px] font-medium text-ink-500">{label}</p>
         {icon && <IconChip icon={icon} tone={iconTone} size="sm" />}
       </div>
-      <p className={cls('mt-2 text-[26px] font-bold leading-tight tracking-tight', tone === 'red' ? 'text-rose-600' : tone === 'amber' ? 'text-amber-600' : 'text-ink-900')}>{value}</p>
+      <p className={cls('mt-2 break-words text-[clamp(1.25rem,5.2vw,1.65rem)] font-bold leading-tight tracking-tight', tone === 'red' ? 'text-rose-600' : tone === 'amber' ? 'text-amber-600' : 'text-ink-900')}>{value}</p>
       {sub && <p className="mt-1 text-xs text-ink-500">{sub}</p>}
       {children}
     </motion.div>
@@ -200,7 +200,7 @@ export function PageHeader({ title, sub, actions, icon: Icon }: { title: string;
       <div className="flex items-center gap-3.5">
         {Icon && <IconChip icon={Icon} tone="brand" size="lg" />}
         <div>
-          <h1 className="text-[22px] font-bold tracking-tight text-ink-900 sm:text-2xl">{title}</h1>
+          <h1 className="text-xl font-bold tracking-tight text-ink-900 sm:text-2xl">{title}</h1>
           {sub && <p className="mt-0.5 text-sm text-ink-500">{sub}</p>}
         </div>
       </div>
@@ -227,7 +227,7 @@ export function Modal({ open, onClose, title, children, footer, icon }: { open: 
           <motion.div role="dialog" aria-modal="true" aria-label={title}
             initial={{ y: 40, opacity: 0, scale: 0.98 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 30, opacity: 0 }}
             transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-            className="scroll-thin max-h-[92vh] w-full overflow-y-auto rounded-t-3xl bg-white shadow-2xl sm:max-w-lg sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
+            className="scroll-thin max-h-[92dvh] w-full overflow-y-auto rounded-t-3xl bg-white shadow-2xl sm:max-w-lg sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
             <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-ink-100 bg-white/95 px-5 py-4 backdrop-blur">
               <div className="flex items-center gap-3">
                 {icon && <IconChip icon={icon} size="sm" />}

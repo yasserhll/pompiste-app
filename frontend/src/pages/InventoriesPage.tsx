@@ -35,8 +35,24 @@ export default function InventoriesPage() {
         actions={<><Button variant="brand" icon={Ruler} onClick={() => setForm('inventaire')}>Nouvel inventaire</Button><Button variant="secondary" icon={Scale} onClick={() => setForm('ajustement')}>Demande d'ajustement</Button></>} />
       <div className="space-y-4">
         <Card title="Inventaires physiques" icon={Ruler} padded={false}>
-          {inv.isLoading ? <Loading /> : !inv.data?.data.length ? <Empty icon={Ruler}>Aucun inventaire.</Empty> : (
-            <div className="overflow-x-auto"><table className="table-base">
+          {inv.isLoading ? <Loading /> : !inv.data?.data.length ? <Empty icon={Ruler}>Aucun inventaire.</Empty> : (<>
+            <ul className="divide-y divide-ink-100 md:hidden">
+              {inv.data.data.map((i) => (
+                <li key={i.id} className="flex items-start justify-between gap-3 px-4 py-3.5">
+                  <div className="min-w-0">
+                    <p className="font-semibold">{i.tank.code} <span className="font-normal text-ink-500">· {i.method}</span></p>
+                    <p className="text-xs text-ink-500">{dateTime(i.measured_at)} · {i.user.name}</p>
+                    <p className="mt-1 text-xs text-ink-600">Théorique {litres(i.theoretical_quantity_l)} · écart <b className={Number(i.difference_l) ? 'text-amber-700' : ''}>{litres(i.difference_l)}</b></p>
+                  </div>
+                  <div className="shrink-0 space-y-1 text-right">
+                    <p className="font-bold tabular-nums">{litres(i.measured_quantity_l)}</p>
+                    <Badge color={STATUS[i.status as keyof typeof STATUS][0]}>{STATUS[i.status as keyof typeof STATUS][1]}</Badge>
+                    {isAdmin && i.status === 'en_attente' && <button className="block w-full text-right text-xs font-semibold text-brand-600" onClick={() => setReview({ kind: 'inventories', item: i })}>Examiner</button>}
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <div className="hidden overflow-x-auto md:block"><table className="table-base">
               <thead><tr><th>Date de mesure</th><th>Citerne</th><th className="text-right">Mesuré</th><th className="text-right">Théorique</th><th className="text-right">Écart</th><th>Méthode</th><th>Par</th><th>Statut</th><th /></tr></thead>
               <tbody>{inv.data.data.map((i) => (
                 <tr key={i.id}>
@@ -49,11 +65,23 @@ export default function InventoriesPage() {
                   <td>{isAdmin && i.status === 'en_attente' && <Button size="sm" variant="secondary" onClick={() => setReview({ kind: 'inventories', item: i })}>Examiner</Button>}</td>
                 </tr>))}</tbody>
             </table></div>
-          )}
+          </>)}
         </Card>
         <Card title="Ajustements de stock" icon={Scale} padded={false}>
-          {adj.isLoading ? <Loading /> : !adj.data?.data.length ? <Empty icon={Scale}>Aucun ajustement.</Empty> : (
-            <div className="overflow-x-auto"><table className="table-base">
+          {adj.isLoading ? <Loading /> : !adj.data?.data.length ? <Empty icon={Scale}>Aucun ajustement.</Empty> : (<>
+            <ul className="divide-y divide-ink-100 md:hidden">
+              {adj.data.data.map((a) => (
+                <li key={a.id} className="flex items-start justify-between gap-3 px-4 py-3.5">
+                  <div className="min-w-0"><p className="font-semibold">{a.tank.code}</p><p className="text-xs text-ink-500">{dateTime(a.effective_at)} · {a.requester.name}</p><p className="mt-1 text-xs text-ink-600">{a.reason}</p></div>
+                  <div className="shrink-0 space-y-1 text-right">
+                    <p className="font-bold tabular-nums">{Number(a.quantity_l) > 0 ? '+' : ''}{litres(a.quantity_l)}</p>
+                    <Badge color={STATUS[a.status as keyof typeof STATUS][0]}>{STATUS[a.status as keyof typeof STATUS][1]}</Badge>
+                    {isAdmin && a.status === 'en_attente' && <button className="block w-full text-right text-xs font-semibold text-brand-600" onClick={() => setReview({ kind: 'adjustments', item: a })}>Examiner</button>}
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <div className="hidden overflow-x-auto md:block"><table className="table-base">
               <thead><tr><th>Date</th><th>Citerne</th><th className="text-right">Quantité</th><th>Motif</th><th>Demandé par</th><th>Statut</th><th /></tr></thead>
               <tbody>{adj.data.data.map((a) => (
                 <tr key={a.id}>
@@ -64,7 +92,7 @@ export default function InventoriesPage() {
                   <td>{isAdmin && a.status === 'en_attente' && <Button size="sm" variant="secondary" onClick={() => setReview({ kind: 'adjustments', item: a })}>Examiner</Button>}</td>
                 </tr>))}</tbody>
             </table></div>
-          )}
+          </>)}
         </Card>
       </div>
       {form && <EntryForm kind={form} tanks={tanks.data ?? []} onClose={() => setForm(null)} />}
